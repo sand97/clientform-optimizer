@@ -8,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ArrowRight, BarChart, CheckCircle, FileCheck, FileText, FormInput, Plus, Send, Settings, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { Template, TeamMember } from '@/types/forms';
 
 interface Organization {
   id: string;
@@ -24,36 +25,13 @@ interface Form {
   organization_name?: string;
 }
 
-interface Member {
-  id: string;
-  user_id: string;
-  organization_id: string;
-  role: string;
-  created_at: string;
-}
-
-interface Template {
-  id: string;
-  form_id: string;
-  pdf_url: string;
-  positions: Array<{
-    x: number;
-    y: number;
-    page: number;
-    fieldId: string;
-  }>;
-  created_at: string;
-  updated_at: string;
-  form_name?: string;
-}
-
 interface Submission {
   id: string;
   form_id: string;
   template_id: string;
-  template_data: string;
-  form_data: string;
-  field_values: string;
+  template_data: any;
+  form_data: any;
+  field_values: any;
   created_at: string;
   organization_id: string | null;
 }
@@ -67,7 +45,7 @@ const Dashboard = () => {
   const [forms, setForms] = useState<Form[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
-  const [members, setMembers] = useState<Member[]>([]);
+  const [members, setMembers] = useState<TeamMember[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
 
@@ -124,7 +102,6 @@ const Dashboard = () => {
       if (!user) return;
 
       try {
-        // Fetch personal forms
         const { data: personalForms, error: personalFormsError } = await supabase
           .from('forms')
           .select('id, name, description, created_at, organization_id')
@@ -136,7 +113,6 @@ const Dashboard = () => {
 
         let allForms = personalForms;
 
-        // Only fetch organization forms if there's a current organization
         if (currentOrganization) {
           const { data: orgForms, error: orgFormsError } = await supabase
             .from('forms')
@@ -220,10 +196,12 @@ const Dashboard = () => {
 
         const templatesWithFormNames = data.map(template => ({
           ...template,
-          form_name: template.forms?.name
+          form_name: template.forms?.name,
+          positions: typeof template.positions === 'string' ? 
+            JSON.parse(template.positions) : template.positions
         }));
 
-        setTemplates(templatesWithFormNames);
+        setTemplates(templatesWithFormNames as Template[]);
       } catch (error) {
         console.error('Error fetching templates:', error);
         toast({
@@ -252,11 +230,9 @@ const Dashboard = () => {
             )
           `);
 
-        // If there's a current organization, fetch submissions for that org
         if (currentOrganization) {
           query = query.eq('organization_id', currentOrganization.id);
         } else {
-          // Otherwise, fetch submissions for forms created by the user
           query = query.eq('forms.user_id', user.id);
         }
 
@@ -264,12 +240,14 @@ const Dashboard = () => {
 
         if (error) throw error;
 
-        // Parse JSON strings
         const parsedSubmissions = data.map(submission => ({
           ...submission,
-          template_data: JSON.parse(submission.template_data),
-          form_data: JSON.parse(submission.form_data),
-          field_values: JSON.parse(submission.field_values)
+          template_data: typeof submission.template_data === 'string' ? 
+            JSON.parse(submission.template_data) : submission.template_data,
+          form_data: typeof submission.form_data === 'string' ? 
+            JSON.parse(submission.form_data) : submission.form_data,
+          field_values: typeof submission.field_values === 'string' ? 
+            JSON.parse(submission.field_values) : submission.field_values
         }));
 
         setSubmissions(parsedSubmissions);

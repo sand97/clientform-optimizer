@@ -1,23 +1,28 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
+import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
-import { Input } from '@/components/ui/input';
-import { Plus, Mail, Trash2, ArrowLeft, UserPlus, Shield } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
+import { TeamMember } from '@/types/forms';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -25,85 +30,56 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-interface TeamMember {
-  id: string;
-  user_id: string;
-  organization_id: string;
-  role: 'owner' | 'admin' | 'member';
-  user: {
-    email: string;
-    user_metadata: {
-      full_name?: string;
-      name?: string;
-    };
-  };
-  created_at: string;
-}
-
-interface User {
-  id: string;
-  email: string;
-  organization_id: string;
-  user_metadata: {
-    full_name?: string;
-    name?: string;
-  };
-}
-
-type OrganizationMemberWithUser = Database['public']['Views']['organization_members_with_users']['Row'];
+import { Check, Copy, Plus, UserPlus, X } from 'lucide-react';
 
 const TeamMembers = () => {
-  const navigate = useNavigate();
+  const { organizationId } = useParams<{ organizationId: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'admin' | 'member'>('member');
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
-  const [inviting, setInviting] = useState(false);
-  const [email, setEmail] = useState('');
-  const [role, setRole] = useState<'admin' | 'member'>('member');
-  const [showInviteDialog, setShowInviteDialog] = useState(false);
-  const [currentOrganization, setCurrentOrganization] = useState<OrganizationMemberWithUser | null>(null);
+  const [inviteRole, setInviteRole] = useState('member');
+  const [copied, setCopied] = useState(false);
 
+  // Fetch team members
   useEffect(() => {
-    const fetchTeamMembers = async () => {
-      if (!user) return;
-
+    const fetchMembers = async () => {
+      if (!organizationId) return;
+      
       try {
-        // First, get the user's current organization
-        const { data: orgData, error: orgError } = await supabase
-          .from('organization_members')
-          .select('organization_id')
-          .eq('user_id', user.id)
-          .single();
-
-        if (orgError) throw orgError;
-
-        // Then fetch organization members with their profiles in a single query
-        const { data: membersData, error: membersError } = await supabase
+        setLoading(true);
+        
+        const { data, error } = await supabase
           .from('organization_members_with_users')
           .select('*')
-          .eq('organization_id', orgData.organization_id);
-
-        if (membersError) throw membersError;
-
-        // Transform the data to match our TeamMember interface
-        const transformedMembers = (membersData as OrganizationMemberWithUser[]).map(member => ({
-          ...member,
-          user: {
-            email: member.email,
-            user_metadata: member.user_metadata
-          },
-          role: member.role as 'owner' | 'admin' | 'member'
-        })) as TeamMember[];
+          .eq('organization_id', organizationId);
+          
+        if (error) throw error;
         
+        // Transform the data to match our TeamMember type
+        const transformedMembers = data.map(member => ({
+          id: member.id || '',
+          organization_id: member.organization_id || '',
+          user_id: member.user_id || '',
+          role: member.role || '',
+          created_at: member.created_at || '',
+          email: member.email || '',
+          raw_user_meta_data: member.raw_user_meta_data
+        }));
+
         setMembers(transformedMembers);
-        setCurrentOrganization(transformedMembers[0] || null);
-      } catch (error) {
-        console.error('Error fetching team members:', error);
+        
+        // Check if current user is admin
+        const memberRecord = transformedMembers.find(m => m.user_id === user?.id);
+        if (memberRecord && ['owner', 'admin'].includes(memberRecord.role)) {
+          setIsAdmin(true);
+        }
+      } catch (error: any) {
+        console.error('Error loading members:', error);
         toast({
           title: "Error",
           description: "Failed to load team members",
@@ -113,275 +89,215 @@ const TeamMembers = () => {
         setLoading(false);
       }
     };
-
-    fetchTeamMembers();
-  }, [user, toast]);
-
-  const refreshMembers = async (organizationId: string) => {
-    const { data: updatedMembers, error: refreshError } = await supabase
-      .from('organization_members_with_users')
-      .select('*')
-      .eq('organization_id', organizationId);
-
-    if (refreshError) throw refreshError;
-
-    const transformedMembers = (updatedMembers as OrganizationMemberWithUser[]).map(member => ({
-      ...member,
-      user: {
-        email: member.email,
-        user_metadata: member.user_metadata
-      },
-      role: member.role as 'owner' | 'admin' | 'member'
-    })) as TeamMember[];
     
-    setMembers(transformedMembers);
-    setCurrentOrganization(transformedMembers[0] || null);
-  };
+    fetchMembers();
+  }, [organizationId, user, toast]);
 
-  const handleInviteMember = async (e: React.FormEvent) => {
-    e.preventDefault();
-    toast({
-      title: "Coming Soon",
-      description: "This feature will be implemented securely in the next update. Stay tuned!",
-    });
-    return;
-    setInviting(true);
+  const handleInvite = async () => {
+    if (!organizationId || !inviteEmail || !inviteRole) return;
+
     try {
-      // Check if user exists using the view
-      const { data: existingUser, error: userError } = await supabase
-        .from('organization_members_with_users')
-        .select('user_id')
-        .eq('email', email)
-        .single();
-
-      if (userError && userError.code !== 'PGRST116') {
-        throw userError;
-      }
-
-      // Check if user is already a member
-      if (existingUser) {
-        const { data: existingMember, error: memberError } = await supabase
-          .from('organization_members')
-          .select('id')
-          .eq('organization_id', currentOrganization?.organization_id)
-          .eq('user_id', existingUser.user_id)
-          .single();
-
-        if (memberError && memberError.code !== 'PGRST116') {
-          throw memberError;
-        }
-
-        if (existingMember) {
-          toast({
-            title: "Error",
-            description: "This user is already a member of your organization",
-            variant: "destructive",
-          });
-          return;
-        }
-      }
-
-      // Create invitation
-      const { data: invitation, error: inviteError } = await supabase
-        .from('invitations')
-        .insert([
-          {
-            organization_id: currentOrganization?.organization_id,
-            email,
-            role,
-            invited_by: user?.id,
-            expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days
-          },
-        ])
-        .select()
-        .single();
-
-      if (inviteError) throw inviteError;
-
-      toast({
-        title: "Invitation sent",
-        description: "An invitation has been sent to the specified email address",
+      const { error } = await supabase.functions.invoke('invite-to-organization', {
+        body: {
+          email: inviteEmail,
+          organization_id: organizationId,
+          role: inviteRole,
+        },
       });
 
-      setEmail('');
-      setRole('member');
-      setShowInviteDialog(false);
+      if (error) {
+        console.error('Error inviting member:', error);
+        toast({
+          title: "Error",
+          description: "Failed to invite member",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      toast({
+        title: "Success",
+        description: "Invitation sent successfully",
+      });
+      setIsInviteModalOpen(false);
     } catch (error) {
       console.error('Error inviting member:', error);
       toast({
         title: "Error",
-        description: "Failed to send invitation",
+        description: "Failed to invite member",
         variant: "destructive",
       });
-    } finally {
-      setInviting(false);
     }
   };
 
-  const handleRemoveMember = async (memberId: string) => {
-    if (!user) return;
+  const handleRemove = async (memberId: string) => {
+    if (!organizationId) return;
 
     try {
-      // First, get the user's current organization
-      const { data: orgData, error: orgError } = await supabase
-        .from('organization_members')
-        .select('organization_id')
-        .eq('user_id', user.id)
-        .single();
-
-      if (orgError) throw orgError;
-
       const { error } = await supabase
         .from('organization_members')
         .delete()
-        .eq('id', memberId)
-        .eq('organization_id', orgData.organization_id);
+        .eq('organization_id', organizationId)
+        .eq('user_id', memberId);
 
       if (error) throw error;
 
-      // Refresh members list
-      await refreshMembers(orgData.organization_id);
-
       toast({
-        title: "Member removed",
-        description: "The team member has been removed from your organization",
+        title: "Success",
+        description: "Member removed successfully",
       });
+      setMembers(members.filter(member => member.user_id !== memberId));
     } catch (error) {
       console.error('Error removing member:', error);
       toast({
         title: "Error",
-        description: "Failed to remove team member",
+        description: "Failed to remove member",
         variant: "destructive",
       });
     }
   };
 
-  const getMemberName = (member: TeamMember) => {
-    const metadata = member.user.user_metadata;
-    return metadata?.full_name || metadata?.name || member.user.email.split('@')[0];
+  const handleShare = () => {
+    const baseUrl = window.location.origin;
+    const url = `${baseUrl}/join/${organizationId}`;
+    navigator.clipboard.writeText(url);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+    toast({
+      title: "Success",
+      description: "URL copied to clipboard",
+    });
   };
 
-  return (
-    <div className="max-w-7xl mx-auto px-4 py-8">
-      <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-6">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Dashboard
-      </Button>
+  // Get display name from user metadata
+  const getDisplayName = (member: TeamMember) => {
+    if (!member.raw_user_meta_data) return member.email;
+    
+    const metadata = member.raw_user_meta_data;
+    
+    if (metadata.full_name) return metadata.full_name;
+    if (metadata.name) return metadata.name;
+    
+    return member.email;
+  };
 
+  if (loading) {
+    return <p>Loading team members...</p>;
+  }
+
+  return (
+    <div className="max-w-3xl mx-auto px-4 py-8">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div>
-            <CardTitle className="text-2xl">Team Members</CardTitle>
-            <CardDescription>
-              Manage your organization's team members and their roles
-            </CardDescription>
-          </div>
-          <Dialog open={showInviteDialog} onOpenChange={setShowInviteDialog}>
-            <DialogTrigger asChild>
-              <Button>
-                <UserPlus className="mr-2 h-4 w-4" />
-                Invite Member
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Invite Team Member</DialogTitle>
-                <DialogDescription>
-                  Send an invitation to join your organization
-                </DialogDescription>
-              </DialogHeader>
-              <div className="grid gap-4 py-4">
-                <div className="grid gap-2">
-                  <label htmlFor="email" className="text-sm font-medium">
-                    Email Address
-                  </label>
-                  <Input
-                    id="email"
-                    type="email"
-                    placeholder="Enter email address"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                  />
-                </div>
-                <div className="grid gap-2">
-                  <label htmlFor="role" className="text-sm font-medium">
-                    Role
-                  </label>
-                  <Select value={role} onValueChange={(value: 'admin' | 'member') => setRole(value)}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="member">Member</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setShowInviteDialog(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleInviteMember}>
-                  <Mail className="mr-2 h-4 w-4" />
-                  Send Invitation
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
+        <CardHeader>
+          <CardTitle>Team Members</CardTitle>
+          <CardDescription>
+            Manage your team members and their roles within the organization
+          </CardDescription>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <p>Loading team members...</p>
-          ) : members.length === 0 ? (
-            <div className="text-center py-8">
-              <p className="text-gray-500">No team members yet</p>
-              <Button onClick={() => setShowInviteDialog(true)} className="mt-4">
-                <UserPlus className="mr-2 h-4 w-4" />
-                Invite Your First Member
-              </Button>
+          <div className="mb-4 flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold">Current Members</h3>
+              <p className="text-sm text-gray-500">
+                {members.length} members
+              </p>
+            </div>
+            {isAdmin && (
+              <div className="flex space-x-2">
+                <Button variant="outline" size="sm" onClick={handleShare}>
+                  {copied ? (
+                    <Check className="h-4 w-4 mr-2" />
+                  ) : (
+                    <Copy className="h-4 w-4 mr-2" />
+                  )}
+                  Copy Invite Link
+                </Button>
+                <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <UserPlus className="h-4 w-4 mr-2" />
+                      Invite Member
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                      <DialogTitle>Invite New Member</DialogTitle>
+                      <DialogDescription>
+                        Send an invitation to a new team member.
+                      </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="email" className="text-right">
+                          Email
+                        </Label>
+                        <Input
+                          id="email"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          className="col-span-3"
+                          type="email"
+                        />
+                      </div>
+                      <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="role" className="text-right">
+                          Role
+                        </Label>
+                        <Select value={inviteRole} onValueChange={setInviteRole}>
+                          <SelectTrigger className="col-span-3">
+                            <SelectValue placeholder="Select a role" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="member">Member</SelectItem>
+                            <SelectItem value="admin">Admin</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+                    <Button type="submit" onClick={handleInvite}>
+                      Send Invitation
+                    </Button>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            )}
+          </div>
+          {members.length === 0 ? (
+            <div className="text-center text-gray-500">
+              No members found
             </div>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead>Email</TableHead>
-                  <TableHead>Role</TableHead>
-                  <TableHead>Joined</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {members.map((member) => (
-                  <TableRow key={member.id}>
-                    <TableCell className="font-medium">{getMemberName(member)}</TableCell>
-                    <TableCell>{member.user.email}</TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-gray-500" />
-                        <span className="capitalize">{member.role}</span>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      {new Date(member.created_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell className="text-right">
-                      {member.user_id !== user?.id && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveMember(member.id)}
-                          className="text-red-600 hover:text-red-700 hover:bg-red-50"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <ul className="divide-y divide-gray-200">
+              {members.map((member) => (
+                <li key={member.user_id} className="py-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <Avatar>
+                      <AvatarImage src={`https://avatar.vercel.sh/${member.email}.png`} />
+                      <AvatarFallback>{getDisplayName(member).substring(0, 2).toUpperCase()}</AvatarFallback>
+                    </Avatar>
+                    <div>
+                      <p className="font-medium">{getDisplayName(member)}</p>
+                      <p className="text-gray-500 text-sm">{member.email}</p>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                      {member.role}
+                    </span>
+                    {isAdmin && member.user_id !== user?.id && (
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="ml-2"
+                        onClick={() => handleRemove(member.user_id)}
+                      >
+                        <X className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </li>
+              ))}
+            </ul>
           )}
         </CardContent>
       </Card>
@@ -389,4 +305,4 @@ const TeamMembers = () => {
   );
 };
 
-export default TeamMembers; 
+export default TeamMembers;

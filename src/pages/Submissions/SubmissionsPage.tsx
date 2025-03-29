@@ -1,10 +1,10 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { Download, Eye } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
+import { FormData, TemplateData, Field } from '@/types/forms';
 
 // UI Components
 import { PageHeader } from '@/components/ui/page-header';
@@ -13,30 +13,6 @@ import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, Tabl
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-
-interface Field {
-  id: string;
-  name: string;
-  type: string;
-  required: boolean;
-  placeholder?: string;
-  options?: string;
-  order_position: number;
-}
-
-interface FormData {
-  id: string;
-  name: string;
-  description?: string;
-  fields: Field[];
-}
-
-interface TemplateData {
-  id: string;
-  pdf_url: string;
-  original_pdf_name: string;
-  positions: Record<string, any>;
-}
 
 interface Submission {
   id: string;

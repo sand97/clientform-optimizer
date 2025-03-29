@@ -11,6 +11,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { Template } from '@/types/forms';
 import { ArrowLeft, Check, Copy, Share2, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -23,21 +24,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
-
-interface Template {
-  id: string;
-  form_id: string;
-  pdf_url: string;
-  original_pdf_name: string;
-  positions: Array<{
-    x: number;
-    y: number;
-    page: number;
-    fieldId: string;
-  }>;
-  updated_at: string;
-  form_name?: string;
-}
 
 interface Form {
   id: string;
@@ -75,10 +61,12 @@ const Templates = () => {
 
         const templatesWithFormNames = data.map(template => ({
           ...template,
-          form_name: template.forms?.name
+          form_name: template.forms?.name,
+          positions: typeof template.positions === 'string' ? 
+            JSON.parse(template.positions) : template.positions
         }));
 
-        setTemplates(templatesWithFormNames);
+        setTemplates(templatesWithFormNames as Template[]);
       } catch (error) {
         console.error('Error fetching templates:', error);
         toast({
@@ -322,4 +310,4 @@ const Templates = () => {
   );
 };
 
-export default Templates; 
+export default Templates;

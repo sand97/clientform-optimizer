@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { Field, Template } from '@/types/forms';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -48,20 +49,6 @@ export default function SubmitTemplate() {
   const [formData, setFormData] = useState<Record<string, string>>({});
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  // Update page title when template loads
-  useEffect(() => {
-    if (template?.form?.name) {
-      document.title = `${template.form.name} - Form Submission`;
-    } else {
-      document.title = 'Form Submission';
-    }
-
-    // Cleanup - reset title when component unmounts
-    return () => {
-      document.title = 'Form Filler';
-    };
-  }, [template]);
-
   useEffect(() => {
     const fetchTemplateAndForm = async () => {
       try {
@@ -91,16 +78,25 @@ export default function SubmitTemplate() {
 
         if (fieldsError) throw fieldsError;
 
+        // Parse positions if it's a string
+        const positions = typeof templateData.positions === 'string' 
+          ? JSON.parse(templateData.positions) 
+          : templateData.positions;
+
         // Combine the data
         const completeTemplate = {
           ...templateData,
+          positions,
           form: {
             ...templateData.form,
-            fields: fieldsData
+            fields: fieldsData.map((field: any) => ({
+              ...field,
+              options: field.options || ''
+            }))
           }
         };
 
-        setTemplate(completeTemplate);
+        setTemplate(completeTemplate as Template);
 
         // Initialize form data with empty values
         const initialFormData: Record<string, string> = {};
@@ -310,4 +306,4 @@ export default function SubmitTemplate() {
       </footer>
     </div>
   );
-} 
+}

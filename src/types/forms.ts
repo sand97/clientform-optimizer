@@ -13,3 +13,44 @@ export interface Organization {
   id: string;
   name: string;
 }
+
+export interface Position {
+  x: number;
+  y: number;
+  page: number;
+  fieldId: string;
+}
+
+export interface Template {
+  id: string;
+  form_id: string;
+  pdf_url: string;
+  original_pdf_name: string;
+  positions: Position[] | any;
+  updated_at: string;
+  form_name?: string;
+}
+
+export interface FormData {
+  id: string;
+  name: string;
+  description?: string;
+  fields: Field[];
+}
+
+export interface TemplateData {
+  id: string;
+  pdf_url: string;
+  original_pdf_name: string;
+  positions: Record<string, any>;
+}
+
+export interface TeamMember {
+  id: string;
+  organization_id: string;
+  user_id: string;
+  role: string;
+  created_at: string;
+  email: string;
+  raw_user_meta_data?: any;
+}
