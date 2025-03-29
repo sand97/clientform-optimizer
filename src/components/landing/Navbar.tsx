@@ -37,17 +37,23 @@ const Navbar = () => {
             <div className="flex space-x-2">
               {user ? (
                 <>
-                  <Button variant="outline" className="mr-1" as={Link} to="/dashboard">
-                    Dashboard
-                  </Button>
+                  <Link to="/dashboard">
+                    <Button variant="outline" className="mr-1">
+                      Dashboard
+                    </Button>
+                  </Link>
                   <Button variant="ghost" onClick={handleLogout}>Log out</Button>
                 </>
               ) : (
                 <>
-                  <Button variant="outline" className="mr-1" as={Link} to="/auth/login">
-                    Log in
-                  </Button>
-                  <Button as={Link} to="/auth/register">Get Started</Button>
+                  <Link to="/auth/login">
+                    <Button variant="outline" className="mr-1">
+                      Log in
+                    </Button>
+                  </Link>
+                  <Link to="/auth/register">
+                    <Button>Get Started</Button>
+                  </Link>
                 </>
               )}
             </div>
@@ -92,15 +98,11 @@ const Navbar = () => {
               <div className="flex flex-col space-y-3 pt-3">
                 {user ? (
                   <>
-                    <Button 
-                      variant="outline" 
-                      className="w-full" 
-                      as={Link} 
-                      to="/dashboard" 
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Dashboard
-                    </Button>
+                    <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" className="w-full">
+                        Dashboard
+                      </Button>
+                    </Link>
                     <Button 
                       variant="ghost" 
                       className="w-full" 
@@ -114,23 +116,16 @@ const Navbar = () => {
                   </>
                 ) : (
                   <>
-                    <Button 
-                      variant="outline" 
-                      className="w-full" 
-                      as={Link} 
-                      to="/auth/login" 
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Log in
-                    </Button>
-                    <Button 
-                      className="w-full" 
-                      as={Link} 
-                      to="/auth/register" 
-                      onClick={() => setIsMenuOpen(false)}
-                    >
-                      Get Started
-                    </Button>
+                    <Link to="/auth/login" onClick={() => setIsMenuOpen(false)}>
+                      <Button variant="outline" className="w-full">
+                        Log in
+                      </Button>
+                    </Link>
+                    <Link to="/auth/register" onClick={() => setIsMenuOpen(false)}>
+                      <Button className="w-full">
+                        Get Started
+                      </Button>
+                    </Link>
                   </>
                 )}
               </div>
