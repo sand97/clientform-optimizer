@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -88,7 +87,6 @@ const Dashboard = () => {
       if (!user) return;
 
       try {
-        // Fetch user's personal forms (where organization_id is null)
         const { data: personalForms, error: personalFormsError } = await supabase
           .from('forms')
           .select('id, name, description, created_at, organization_id')
@@ -98,7 +96,6 @@ const Dashboard = () => {
 
         if (personalFormsError) throw personalFormsError;
 
-        // Fetch forms from organizations the user belongs to
         const { data: orgForms, error: orgFormsError } = await supabase
           .from('forms')
           .select(`
@@ -146,7 +143,11 @@ const Dashboard = () => {
   };
 
   const handleCreateForm = () => {
-    navigate('/forms/create');
+    navigate('/forms/create', { 
+      state: { 
+        currentOrganizationId: currentOrganization?.id || ''
+      } 
+    });
   };
 
   const handleViewForm = (id: string) => {
@@ -180,7 +181,6 @@ const Dashboard = () => {
       </div>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Get Started Section - Now positioned above Dashboard Overview */}
         <div className="mb-8">
           <Card className="bg-blue-50 border border-blue-100">
             <CardContent className="p-6">
@@ -221,7 +221,6 @@ const Dashboard = () => {
           </Card>
         </div>
 
-        {/* Dashboard Overview Section - Now below the Get Started section */}
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-6">Dashboard Overview</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -299,7 +298,6 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Forms Section */}
         {forms.length > 0 && (
           <div className="mb-8">
             <div className="flex justify-between items-center mb-6">

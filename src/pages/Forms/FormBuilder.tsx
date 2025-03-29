@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -79,6 +79,7 @@ const FIELD_TYPES = [
 
 const FormBuilder = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { toast } = useToast();
   const { user } = useAuth();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,13 +88,15 @@ const FormBuilder = () => {
   const [fields, setFields] = useState<Field[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
+  
+  const currentOrgId = location.state?.currentOrganizationId || '';
 
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: '',
       description: '',
-      organization_id: '',
+      organization_id: currentOrgId,
     },
   });
 
@@ -128,6 +131,10 @@ const FormBuilder = () => {
         }));
         
         setOrganizations(orgs);
+        
+        if (currentOrgId && orgs.some(org => org.id === currentOrgId)) {
+          form.setValue('organization_id', currentOrgId);
+        }
       } catch (error: any) {
         toast({
           title: "Error fetching organizations",
@@ -140,7 +147,7 @@ const FormBuilder = () => {
     };
 
     fetchOrganizations();
-  }, [user, toast]);
+  }, [user, toast, form, currentOrgId]);
 
   const onSubmitFormDetails = async (values: FormValues) => {
     setFormData(values);
@@ -198,7 +205,7 @@ const FormBuilder = () => {
           name: formData.name,
           description: formData.description || '',
           user_id: user.id,
-          organization_id: formData.organization_id || null,
+          organization_id: formData.organization_id !== 'personal' ? formData.organization_id : null,
         })
         .select('id')
         .single();
