@@ -356,19 +356,7 @@ const FormBuilder = () => {
                       <CardContent className="p-6">
                         <div className="space-y-4">
                           <div className="flex items-center justify-between border-b pb-3">
-                            <div className="flex items-center">
-                              <span className="text-gray-600 mr-2">Field Type</span>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span><Info className="h-4 w-4 text-gray-400" /></span>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="bg-gray-800 text-white">
-                                    <p>Select the type of field you want to add</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
+                            <span className="text-lg font-medium">Field Type</span>
                             <FormField
                               control={fieldForm.control}
                               name="type"
@@ -395,73 +383,7 @@ const FormBuilder = () => {
                           </div>
                           
                           <div className="flex items-center justify-between border-b pb-3">
-                            <div className="flex items-center">
-                              <span className="text-gray-600 mr-2">Field Name</span>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span><Info className="h-4 w-4 text-gray-400" /></span>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="bg-gray-800 text-white">
-                                    <p>Enter a name for your field (required)</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                            <FormField
-                              control={fieldForm.control}
-                              name="name"
-                              render={({ field }) => (
-                                <Input 
-                                  className="max-w-[300px]" 
-                                  placeholder="e.g., Full Name" 
-                                  {...field} 
-                                />
-                              )}
-                            />
-                          </div>
-                          
-                          <div className="flex items-center justify-between border-b pb-3">
-                            <div className="flex items-center">
-                              <span className="text-gray-600 mr-2">Placeholder</span>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span><Info className="h-4 w-4 text-gray-400" /></span>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="bg-gray-800 text-white">
-                                    <p>Text that appears in the empty field</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                            <FormField
-                              control={fieldForm.control}
-                              name="placeholder"
-                              render={({ field }) => (
-                                <Input 
-                                  className="max-w-[300px]" 
-                                  placeholder="e.g., Enter your full name" 
-                                  {...field} 
-                                />
-                              )}
-                            />
-                          </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center">
-                              <span className="text-gray-600 mr-2">Required Field</span>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <span><Info className="h-4 w-4 text-gray-400" /></span>
-                                  </TooltipTrigger>
-                                  <TooltipContent className="bg-gray-800 text-white">
-                                    <p>Users must fill out required fields</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
+                            <span className="text-lg font-medium">Required</span>
                             <FormField
                               control={fieldForm.control}
                               name="required"
@@ -472,15 +394,65 @@ const FormBuilder = () => {
                                     checked={field.value}
                                     onCheckedChange={field.onChange}
                                   />
-                                  <label
-                                    htmlFor="required"
-                                    className="text-sm leading-none cursor-pointer"
-                                  >
-                                    Yes
-                                  </label>
                                 </div>
                               )}
                             />
+                          </div>
+                          
+                          <div className="flex items-center justify-between border-b pb-3">
+                            <FormField
+                              control={fieldForm.control}
+                              name="name"
+                              render={({ field }) => (
+                                <div className="w-full">
+                                  <Input 
+                                    className="w-full text-lg border-none bg-transparent focus-visible:ring-0 px-0" 
+                                    placeholder="Field name" 
+                                    {...field} 
+                                  />
+                                </div>
+                              )}
+                            />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="h-6 w-6 rounded-full border border-gray-400 flex items-center justify-center">
+                                    <Info className="h-4 w-4 text-gray-500" />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-gray-800 text-white">
+                                  <p>Enter a descriptive name for this field</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <FormField
+                              control={fieldForm.control}
+                              name="placeholder"
+                              render={({ field }) => (
+                                <div className="w-full">
+                                  <Input 
+                                    className="w-full text-lg border-none bg-transparent focus-visible:ring-0 px-0" 
+                                    placeholder="Field placeholder" 
+                                    {...field} 
+                                  />
+                                </div>
+                              )}
+                            />
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="h-6 w-6 rounded-full border border-gray-400 flex items-center justify-center">
+                                    <Info className="h-4 w-4 text-gray-500" />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-gray-800 text-white">
+                                  <p>Text that will appear inside the empty field</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
                           </div>
                         </div>
 
@@ -501,7 +473,7 @@ const FormBuilder = () => {
                   <CardTitle className="text-xl">Form Fields ({fields.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {fields.map((field, index) => (
                       <FieldCard 
                         key={field.id}
@@ -513,8 +485,8 @@ const FormBuilder = () => {
                   </div>
                   
                   <Button 
-                    variant="outline"
-                    className="w-full mt-4 border-dashed"
+                    variant="default"
+                    className="w-full mt-4"
                     onClick={() => {
                       const element = document.querySelector('form button[type="submit"]');
                       if (element) {
