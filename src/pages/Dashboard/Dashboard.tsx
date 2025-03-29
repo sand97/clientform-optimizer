@@ -152,13 +152,13 @@ const Dashboard = () => {
 
   useEffect(() => {
     const fetchMembers = async () => {
-      if (!user) return;
+      if (!user || !currentOrganization) return;
 
       try {
         const { data: membersData, error: membersError } = await supabase
-          .from('organization_members_with_users')
+          .from('organization_members')
           .select('*')
-          .eq('organization_id', currentOrganization?.id);
+          .eq('organization_id', currentOrganization.id);
 
         if (membersError) throw membersError;
 
@@ -168,8 +168,8 @@ const Dashboard = () => {
           user_id: member.user_id || '',
           role: member.role || '',
           created_at: member.created_at || '',
-          email: member.email || '',
-          raw_user_meta_data: member.raw_user_meta_data
+          email: member.user_id || '',
+          raw_user_meta_data: null
         }));
 
         setMembers(transformedMembers);
