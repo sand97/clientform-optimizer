@@ -5,7 +5,7 @@ import { ArrowRight } from 'lucide-react';
 
 const HeroSection = () => {
   return (
-    <section className="pt-28 md:pt-28 pb-20 md:pb-20 bg-gradient-to-b from-blue-50 to-white">
+    <section className="pt-20 md:pt-24 pb-16 md:pb-16 bg-gradient-to-b from-blue-50 to-white">
       <div className="site-container">
         <div className="container mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
