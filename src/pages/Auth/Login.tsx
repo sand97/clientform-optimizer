@@ -1,6 +1,6 @@
 
-import { useState } from 'react';
-import { Link, Navigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { Link, Navigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,7 +10,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import GoogleIcon from '@/components/ui/google-icon';
-import { KeyRound, LogIn, Mail } from 'lucide-react';
+import { KeyRound, LogIn, Mail, CheckCircle2 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -22,6 +23,18 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 const Login = () => {
   const { user, signIn, signInWithGoogle } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
+  const location = useLocation();
+  const { toast } = useToast();
+  const [confirmationMessage, setConfirmationMessage] = useState<string | null>(null);
+
+  // Check for confirmation message in location state (from AuthCallback)
+  useEffect(() => {
+    if (location.state && location.state.message) {
+      setConfirmationMessage(location.state.message);
+      // Clear the state so it doesn't persist on refresh
+      window.history.replaceState({}, document.title);
+    }
+  }, [location]);
 
   const form = useForm<LoginFormValues>({
     resolver: zodResolver(loginSchema),
@@ -60,6 +73,12 @@ const Login = () => {
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
       <Card className="w-full max-w-md">
+        {confirmationMessage && (
+          <div className="bg-green-100 border border-green-300 text-green-700 px-4 py-3 rounded-t-lg flex items-center">
+            <CheckCircle2 className="h-5 w-5 mr-2" />
+            <span>{confirmationMessage}</span>
+          </div>
+        )}
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
           <CardDescription>Sign in to your account to continue</CardDescription>

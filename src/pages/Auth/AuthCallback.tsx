@@ -1,45 +1,50 @@
 
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const [error, setError] = useState<string | null>(null);
+  const [processing, setProcessing] = useState(true);
 
   useEffect(() => {
+    // Log the URL for debugging
+    console.log('Auth callback URL:', window.location.href);
+    console.log('Query params:', location.search);
+    console.log('Hash:', location.hash);
+    
     // Handle the OAuth callback or email confirmation
     const handleAuthCallback = async () => {
       try {
+        setProcessing(true);
+        
         // Get the URL hash or query params (email confirmations use query params)
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
-        const queryParams = new URLSearchParams(window.location.search);
+        const queryParams = new URLSearchParams(location.search);
         
-        // Check if this is an email confirmation (will have a 'type' param of 'signup')
+        // Check if this is an email confirmation 
         const isEmailConfirmation = queryParams.get('type') === 'signup' || 
-                                    hashParams.get('type') === 'signup';
+                                  hashParams.get('type') === 'signup';
         
-        // Get and refresh the session to ensure we have the latest state
-        const { data, error } = await supabase.auth.getSession();
-
-        if (error) {
-          console.error('Error during auth callback:', error);
-          setError(error.message);
-          return;
-        }
-
-        if (data.session) {
-          // Successfully authenticated
-          console.log('Authentication successful, redirecting to dashboard');
-          navigate('/dashboard');
-        } else if (isEmailConfirmation) {
-          // If this is an email confirmation but no session yet,
-          // we need to explicitly exchange the token
+        // Log confirmation type for debugging
+        console.log('Is email confirmation:', isEmailConfirmation);
+        
+        // For email confirmations, we need to handle the token
+        if (isEmailConfirmation) {
+          console.log('Processing email confirmation...');
+          
+          // Extract token from URL (could be in different places)
           const token = queryParams.get('access_token') || hashParams.get('access_token');
           const refreshToken = queryParams.get('refresh_token') || hashParams.get('refresh_token');
           
+          console.log('Token found:', !!token);
+          
           if (token) {
+            console.log('Setting session with token');
+            // Set the session with the provided tokens
             const { error: setSessionError } = await supabase.auth.setSession({
               access_token: token,
               refresh_token: refreshToken || '',
@@ -48,30 +53,50 @@ const AuthCallback = () => {
             if (setSessionError) {
               console.error('Error setting session:', setSessionError);
               setError(setSessionError.message);
+              setProcessing(false);
               return;
             }
-            
-            // After setting the session, redirect to dashboard
-            navigate('/dashboard');
-          } else {
-            // If we don't have a token but it's an email confirmation,
-            // try to redirect to login
-            navigate('/auth/login', { 
-              state: { message: 'Email confirmed successfully. Please log in.' } 
-            });
           }
+        }
+        
+        // After handling the token (or for OAuth callbacks), check the session
+        console.log('Checking current session');
+        const { data, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          console.error('Error getting session:', error);
+          setError(error.message);
+          setProcessing(false);
+          return;
+        }
+        
+        console.log('Session check result:', data.session ? 'Has session' : 'No session');
+        
+        if (data.session) {
+          // We have a valid session, redirect to dashboard
+          console.log('Valid session found, redirecting to dashboard');
+          navigate('/dashboard');
+        } else if (isEmailConfirmation) {
+          // If email confirmation but no session, redirect to login with success message
+          console.log('Email confirmed but no session, redirecting to login');
+          navigate('/auth/login', { 
+            state: { message: 'Email confirmed successfully. Please log in.' } 
+          });
         } else {
           // Failed to authenticate
+          console.error('Authentication failed: No session established');
           setError('Authentication failed. Please try again.');
+          setProcessing(false);
         }
       } catch (err) {
         console.error('Unexpected error during auth callback:', err);
         setError('An unexpected error occurred. Please try again.');
+        setProcessing(false);
       }
     };
 
     handleAuthCallback();
-  }, [navigate]);
+  }, [navigate, location]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
