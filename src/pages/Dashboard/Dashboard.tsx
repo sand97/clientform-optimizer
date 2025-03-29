@@ -47,6 +47,17 @@ interface Template {
   form_name?: string;
 }
 
+interface Submission {
+  id: string;
+  form_id: string;
+  template_id: string;
+  template_data: string;
+  form_data: string;
+  field_values: string;
+  created_at: string;
+  organization_id: string | null;
+}
+
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -58,6 +69,7 @@ const Dashboard = () => {
   const [userName, setUserName] = useState('');
   const [members, setMembers] = useState<Member[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
+  const [submissions, setSubmissions] = useState<Submission[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -225,6 +237,55 @@ const Dashboard = () => {
     fetchTemplates();
   }, [user, toast]);
 
+  useEffect(() => {
+    const fetchSubmissions = async () => {
+      if (!user) return;
+
+      try {
+        let query = supabase
+          .from('submissions')
+          .select(`
+            *,
+            forms:form_id (
+              user_id,
+              organization_id
+            )
+          `);
+
+        // If there's a current organization, fetch submissions for that org
+        if (currentOrganization) {
+          query = query.eq('organization_id', currentOrganization.id);
+        } else {
+          // Otherwise, fetch submissions for forms created by the user
+          query = query.eq('forms.user_id', user.id);
+        }
+
+        const { data, error } = await query;
+
+        if (error) throw error;
+
+        // Parse JSON strings
+        const parsedSubmissions = data.map(submission => ({
+          ...submission,
+          template_data: JSON.parse(submission.template_data),
+          form_data: JSON.parse(submission.form_data),
+          field_values: JSON.parse(submission.field_values)
+        }));
+
+        setSubmissions(parsedSubmissions);
+      } catch (error) {
+        console.error('Error fetching submissions:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load submissions",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchSubmissions();
+  }, [user, currentOrganization, toast]);
+
   const handleCreateOrganization = () => {
     navigate('/organizations/create');
   };
@@ -238,18 +299,20 @@ const Dashboard = () => {
   };
 
   const handleCreateForm = () => {
-    if (forms.length > 0) {
-      navigate('/templates/create', { 
+    if (forms.length === 0) {
+      navigate('/forms/create', { 
         state: { 
           currentOrganizationId: currentOrganization?.id || ''
       } 
     });
-  } else {
-    navigate('/forms/create', { 
+  } else if (templates.length === 0) {
+    navigate('/templates/create', { 
       state: { 
         currentOrganizationId: currentOrganization?.id || ''
       } 
     });
+  } else {
+    navigate('/templates');
   }
   };
 
@@ -313,23 +376,26 @@ const Dashboard = () => {
                 </div>
                 
                 <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                    <Send className="h-6 w-6 text-gray-400" />
+                  <div className={`w-12 h-12 ${submissions.length > 0 ? 'bg-blue-50' : 'bg-gray-100'} rounded-full flex items-center justify-center mb-4`}>
+                    <Send className={`h-6 w-6 ${submissions.length > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
                   </div>
-                  <h4 className="font-medium text-lg mb-2 text-gray-700">3. Get Submissions</h4>
+                  <h4 className={`font-medium text-lg mb-2 flex items-center gap-2 ${submissions.length > 0 ? 'text-blue-700' : 'text-gray-700'}`}>
+                    3. Get Submissions
+                    {submissions.length > 0 && <CheckCircle className="h-5 w-5 text-blue-600" />}
+                  </h4>
                   <p className="text-sm text-gray-600">Send your clients a link to fill out the form on any device with real-time validation.</p>
                 </div>
               </div>
               
               <div className="mt-8 text-center">
-                <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateForm}>
+                {forms.length === 0 || templates.length === 0 || submissions.length === 0 ? <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateForm}>
                   <Plus className="mr-2 h-4 w-4" /> 
                   {
                     forms.length === 0 ? "Create Your First Form" :
                     templates.length === 0 ? "Create Your First Template" :
                     "Share your template with your clients"
                   }
-                </Button>
+                </Button> : <p className="text-gray-600">Congratulations! You've done all the steps. You'll see stats here very soon.</p>}
               </div>
             </CardContent>
           </Card>
@@ -384,7 +450,10 @@ const Dashboard = () => {
                 </p>
               </CardContent>
             </Card>
-            <Card className="cursor-pointer transition-colors duration-300 hover:bg-blue-50 hover:border-blue-200 group">
+            <Card 
+              className="cursor-pointer transition-colors duration-300 hover:bg-blue-50 hover:border-blue-200 group"
+              onClick={() => navigate('/submissions')}
+            >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium flex items-center">
                   Submissions
@@ -395,9 +464,9 @@ const Dashboard = () => {
                 <BarChart className="h-4 w-4 text-muted-foreground group-hover:text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold group-hover:text-blue-600">0</div>
+                <div className="text-2xl font-bold group-hover:text-blue-600">{submissions.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  No submissions yet
+                  {submissions.length === 0 ? "No submissions yet" : "Total submissions"}
                 </p>
               </CardContent>
             </Card>

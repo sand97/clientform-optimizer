@@ -75,23 +75,18 @@ const FormListPage = () => {
     };
 
     fetchForms();
-  }, [user, supabase, toast, currentPage, itemsPerPage]); // Add currentPage, itemsPerPage
+  }, [user, toast, currentPage, itemsPerPage]); // Add currentPage, itemsPerPage
 
   const handleCreateNewForm = () => {
-    // Navigate to the dedicated form creation route (e.g., /forms/new)
-    // This route should render the FormBuilder component
     navigate('/forms/new'); 
   };
 
   const handleEditForm = (formId: string) => {
-    // Navigate to the form edit route (e.g., /forms/:id)
-    // This route should also render the FormBuilder component
-    navigate(`/forms/${formId}`); 
+    navigate(`/forms/${formId}/edit`); 
   };
   
   const handleViewSubmissions = (formId: string) => {
-    // TODO: Navigate to a potential submissions view page for this form
-    navigate(`/forms/${formId}/submissions`); // Example route
+    navigate(`/forms/${formId}/submissions`); 
      toast({ title: "Coming Soon", description: "Viewing form submissions is not yet implemented."});
   };
 

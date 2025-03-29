@@ -24,6 +24,7 @@ import InvitationsPage from '@/pages/Invitations/InvitationsPage';
 import ManageAccount from './pages/Account/ManageAccount';
 import Templates from '@/pages/Templates/Templates';
 import CreateTemplate from '@/pages/Templates/CreateTemplate';
+import SubmitTemplate from '@/pages/Templates/SubmitTemplate';
 
 const queryClient = new QueryClient();
 
@@ -64,6 +65,9 @@ const App = () => (
               <Route path="/templates" element={<Templates />} />
               <Route path="/templates/create" element={<CreateTemplate />} />
             </Route>
+            
+            {/* Public Routes */}
+            <Route path="/template/:templateId/submit" element={<SubmitTemplate />} />
             
             {/* Catch-all route */}
             <Route path="*" element={<NotFound />} />

@@ -11,9 +11,18 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Share2, Trash2 } from 'lucide-react';
+import { ArrowLeft, Check, Copy, Share2, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from '@/components/ui/input';
 
 interface Template {
   id: string;
@@ -44,6 +53,9 @@ const Templates = () => {
   const [forms, setForms] = useState<Form[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedForm, setSelectedForm] = useState<string>('');
+  const [templateToDelete, setTemplateToDelete] = useState<Template | null>(null);
+  const [shareUrl, setShareUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -118,83 +130,18 @@ const Templates = () => {
     }
   };
 
-  const handleUpload = async () => {
-    if (!selectedFile || !selectedForm || !user) return;
-
-    try {
-      // Upload PDF to storage
-      const fileExt = selectedFile.name.split('.').pop();
-      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('templates')
-        .upload(fileName, selectedFile);
-
-      if (uploadError) throw uploadError;
-
-      // Get the public URL
-      const { data: { publicUrl } } = supabase.storage
-        .from('templates')
-        .getPublicUrl(fileName);
-
-      // Create template record
-      const { data: template, error: templateError } = await supabase
-        .from('templates')
-        .insert([
-          {
-            form_id: selectedForm,
-            pdf_url: publicUrl,
-            positions: [],
-            user_id: user.id,
-          },
-        ])
-        .select()
-        .single();
-
-      if (templateError) throw templateError;
-
-      toast({
-        title: "Success",
-        description: "Template uploaded successfully",
-      });
-
-      // Refresh templates list
-      const { data: updatedTemplates, error: fetchError } = await supabase
-        .from('templates')
-        .select(`
-          *,
-          forms:form_id(name)
-        `)
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (fetchError) throw fetchError;
-
-      const templatesWithFormNames = updatedTemplates.map(t => ({
-        ...t,
-        form_name: t.forms?.name
-      }));
-
-      setTemplates(templatesWithFormNames);
-      setSelectedFile(null);
-      setSelectedForm('');
-    } catch (error) {
-      console.error('Error uploading template:', error);
-      toast({
-        title: "Error",
-        description: "Failed to upload template",
-        variant: "destructive",
-      });
-    }
+  const handleDeleteClick = (template: Template) => {
+    setTemplateToDelete(template);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!user) return;
+  const handleConfirmDelete = async () => {
+    if (!user || !templateToDelete) return;
 
     try {
       const { error } = await supabase
         .from('templates')
         .delete()
-        .eq('id', id)
+        .eq('id', templateToDelete.id)
         .eq('user_id', user.id);
 
       if (error) throw error;
@@ -204,7 +151,7 @@ const Templates = () => {
         description: "Template deleted successfully",
       });
 
-      setTemplates(templates.filter(t => t.id !== id));
+      setTemplates(templates.filter(t => t.id !== templateToDelete.id));
     } catch (error) {
       console.error('Error deleting template:', error);
       toast({
@@ -212,11 +159,40 @@ const Templates = () => {
         description: "Failed to delete template",
         variant: "destructive",
       });
+    } finally {
+      setTemplateToDelete(null);
     }
   };
 
+  const handleCancelDelete = () => {
+    setTemplateToDelete(null);
+  };
+
   const handleShare = (template: Template) => {
-    // Implementation of handleShare function
+    const baseUrl = window.location.origin;
+    const url = `${baseUrl}/template/${template.id}/submit`;
+    setShareUrl(url);
+  };
+
+  const handleCopyUrl = async () => {
+    if (!shareUrl) return;
+    
+    try {
+      await navigator.clipboard.writeText(shareUrl);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+      
+      toast({
+        title: "Success",
+        description: "URL copied to clipboard",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to copy URL",
+        variant: "destructive",
+      });
+    }
   };
 
   if (loading) {
@@ -275,7 +251,8 @@ const Templates = () => {
                       <Button
                         variant="ghost"
                         size="icon"
-                        onClick={() => handleDelete(template.id)}
+                        onClick={() => handleDeleteClick(template)}
+                        className="h-8 w-8 p-0"
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -287,6 +264,60 @@ const Templates = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={templateToDelete !== null} onOpenChange={(open) => !open && handleCancelDelete()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Template</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this template? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelDelete}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleConfirmDelete}>
+              Delete
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={shareUrl !== null} onOpenChange={(open) => !open && setShareUrl(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Share Template</DialogTitle>
+            <DialogDescription>
+              Share this URL with others to allow them to submit the form
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center space-x-2">
+            <Input
+              value={shareUrl || ''}
+              readOnly
+              className="flex-1"
+            />
+            <Button
+              variant="outline"
+              size="icon"
+              onClick={handleCopyUrl}
+              className="shrink-0"
+            >
+              {copied ? (
+                <Check className="h-4 w-4 text-green-600" />
+              ) : (
+                <Copy className="h-4 w-4" />
+              )}
+            </Button>
+          </div>
+          <DialogFooter>
+            <Button variant="secondary" onClick={() => setShareUrl(null)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
