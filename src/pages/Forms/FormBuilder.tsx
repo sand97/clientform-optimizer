@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -17,7 +16,15 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  Card, 
+  CardContent, 
+  CardDescription, 
+  CardHeader, 
+  CardTitle,
+  CardGroupedInput,
+  CardGroupedCell
+} from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -129,7 +136,6 @@ const FormBuilder = () => {
     fetchOrganizations();
   }, [user, toast, form, currentOrgId]);
 
-  // Check for empty name fields
   useEffect(() => {
     setHasEmptyNames(fields.some(field => !field.name.trim()));
   }, [fields]);
@@ -349,33 +355,32 @@ const FormBuilder = () => {
                   <form onSubmit={fieldForm.handleSubmit(addField)} className="space-y-4">
                     <Card className="border-dashed border-2 bg-white">
                       <CardContent className="p-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FormField
-                            control={fieldForm.control}
-                            name="name"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Field Name</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="e.g., Full Name" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={fieldForm.control}
-                            name="type"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Field Type</FormLabel>
+                        <CardGroupedInput className="mb-4">
+                          <CardGroupedCell label="FIELD NAME">
+                            <FormField
+                              control={fieldForm.control}
+                              name="name"
+                              render={({ field }) => (
+                                <Input 
+                                  className="border-0 shadow-none px-0 h-auto text-lg" 
+                                  placeholder="e.g., Full Name" 
+                                  {...field} 
+                                />
+                              )}
+                            />
+                          </CardGroupedCell>
+                          
+                          <CardGroupedCell label="FIELD TYPE">
+                            <FormField
+                              control={fieldForm.control}
+                              name="type"
+                              render={({ field }) => (
                                 <Select 
                                   onValueChange={field.onChange} 
                                   defaultValue={field.value}
                                 >
                                   <FormControl>
-                                    <SelectTrigger>
+                                    <SelectTrigger className="border-0 shadow-none px-0 h-auto text-lg">
                                       <SelectValue placeholder="Select a field type" />
                                     </SelectTrigger>
                                   </FormControl>
@@ -387,47 +392,52 @@ const FormBuilder = () => {
                                     ))}
                                   </SelectContent>
                                 </Select>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                        </div>
+                              )}
+                            />
+                          </CardGroupedCell>
+                          
+                          <CardGroupedCell label="OPTIONS">
+                            <div className="flex items-center h-full">
+                              <FormField
+                                control={fieldForm.control}
+                                name="required"
+                                render={({ field }) => (
+                                  <div className="flex items-center space-x-2">
+                                    <Checkbox
+                                      id="required"
+                                      checked={field.value}
+                                      onCheckedChange={field.onChange}
+                                    />
+                                    <label
+                                      htmlFor="required"
+                                      className="text-sm leading-none cursor-pointer"
+                                    >
+                                      Required Field
+                                    </label>
+                                  </div>
+                                )}
+                              />
+                            </div>
+                          </CardGroupedCell>
+                        </CardGroupedInput>
+                        
+                        <CardGroupedInput>
+                          <CardGroupedCell label="PLACEHOLDER" fullWidth>
+                            <FormField
+                              control={fieldForm.control}
+                              name="placeholder"
+                              render={({ field }) => (
+                                <Input 
+                                  className="border-0 shadow-none px-0 h-auto text-lg" 
+                                  placeholder="e.g., Enter your full name" 
+                                  {...field} 
+                                />
+                              )}
+                            />
+                          </CardGroupedCell>
+                        </CardGroupedInput>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                          <FormField
-                            control={fieldForm.control}
-                            name="placeholder"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Placeholder (Optional)</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="e.g., Enter your full name" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-
-                          <FormField
-                            control={fieldForm.control}
-                            name="required"
-                            render={({ field }) => (
-                              <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 bg-gray-50 rounded-md h-full">
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value}
-                                    onCheckedChange={field.onChange}
-                                  />
-                                </FormControl>
-                                <div className="space-y-1 leading-none">
-                                  <FormLabel>Required Field</FormLabel>
-                                </div>
-                              </FormItem>
-                            )}
-                          />
-                        </div>
-
-                        <Button type="submit" className="w-full mt-4">
+                        <Button type="submit" className="w-full mt-6">
                           <Plus className="mr-2 h-4 w-4" />
                           Add Field
                         </Button>

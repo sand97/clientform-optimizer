@@ -77,4 +77,56 @@ const CardFooter = React.forwardRef<
 ))
 CardFooter.displayName = "CardFooter"
 
-export { Card, CardHeader, CardFooter, CardTitle, CardDescription, CardContent }
+// Add a new component for grouped inputs like in the AirBnb style
+const CardGroupedInput = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement>
+>(({ className, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 rounded-lg border overflow-hidden",
+      className
+    )}
+    {...props}
+  />
+))
+CardGroupedInput.displayName = "CardGroupedInput"
+
+// Individual cell for the grouped input
+const CardGroupedCell = React.forwardRef<
+  HTMLDivElement,
+  React.HTMLAttributes<HTMLDivElement> & {
+    label?: string;
+    fullWidth?: boolean;
+  }
+>(({ className, label, fullWidth = false, children, ...props }, ref) => (
+  <div
+    ref={ref}
+    className={cn(
+      "flex flex-col p-4 border-b last:border-b-0 sm:border-b-0 sm:border-r last:sm:border-r-0",
+      fullWidth && "sm:col-span-2 md:col-span-3 sm:border-r-0",
+      className
+    )}
+    {...props}
+  >
+    {label && (
+      <label className="text-xs font-medium uppercase text-gray-500 mb-1">
+        {label}
+      </label>
+    )}
+    <div className="flex-1">{children}</div>
+  </div>
+))
+CardGroupedCell.displayName = "CardGroupedCell"
+
+export {
+  Card,
+  CardHeader,
+  CardFooter,
+  CardTitle,
+  CardDescription,
+  CardContent,
+  CardGroupedInput,
+  CardGroupedCell
+}
