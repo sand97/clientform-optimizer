@@ -22,6 +22,8 @@ import FormListPage from "./pages/Forms/FormListPage";
 import TeamMembers from '@/pages/Team/TeamMembers';
 import InvitationsPage from '@/pages/Invitations/InvitationsPage';
 import ManageAccount from './pages/Account/ManageAccount';
+import Templates from '@/pages/Templates/Templates';
+import CreateTemplate from '@/pages/Templates/CreateTemplate';
 
 const queryClient = new QueryClient();
 
@@ -59,6 +61,8 @@ const App = () => (
               <Route path="/team" element={<TeamMembers />} />
               <Route path="/invitations" element={<InvitationsPage />} />
               <Route path="/account/settings" element={<ManageAccount />} />
+              <Route path="/templates" element={<Templates />} />
+              <Route path="/templates/create" element={<CreateTemplate />} />
             </Route>
             
             {/* Catch-all route */}

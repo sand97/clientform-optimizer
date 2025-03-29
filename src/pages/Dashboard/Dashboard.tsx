@@ -32,6 +32,21 @@ interface Member {
   created_at: string;
 }
 
+interface Template {
+  id: string;
+  form_id: string;
+  pdf_url: string;
+  positions: Array<{
+    x: number;
+    y: number;
+    page: number;
+    fieldId: string;
+  }>;
+  created_at: string;
+  updated_at: string;
+  form_name?: string;
+}
+
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -42,6 +57,7 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
   const [members, setMembers] = useState<Member[]>([]);
+  const [templates, setTemplates] = useState<Template[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -167,6 +183,41 @@ const Dashboard = () => {
     }
   }, [user, toast, currentOrganization]);
 
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('templates')
+          .select(`
+            *,
+            forms:form_id(name)
+          `)
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+
+        if (error) throw error;
+
+        const templatesWithFormNames = data.map(template => ({
+          ...template,
+          form_name: template.forms?.name
+        }));
+
+        setTemplates(templatesWithFormNames);
+      } catch (error) {
+        console.error('Error fetching templates:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load templates",
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchTemplates();
+  }, [user, toast]);
+
   const handleCreateOrganization = () => {
     navigate('/organizations/create');
   };
@@ -180,15 +231,19 @@ const Dashboard = () => {
   };
 
   const handleCreateForm = () => {
+    if (forms.length > 0) {
+      navigate('/templates/create', { 
+        state: { 
+          currentOrganizationId: currentOrganization?.id || ''
+      } 
+    });
+  } else {
     navigate('/forms/create', { 
       state: { 
         currentOrganizationId: currentOrganization?.id || ''
       } 
     });
-  };
-
-  const handleViewForm = (id: string) => {
-    navigate(`/forms/${id}`);
+  }
   };
 
   useEffect(() => {
@@ -239,7 +294,9 @@ const Dashboard = () => {
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                     <FileCheck className="h-6 w-6 text-blue-600" />
                   </div>
-                  <h4 className="font-medium text-lg mb-2">2. Configure Template</h4>
+                  <h4 className="font-medium text-lg mb-2">2. Configure Template
+                    {templates.length > 0 && <CheckCircle className="h-5 w-5 text-blue-700" />}
+                  </h4>
                   <p className="text-gray-600 text-sm">Upload your existing PDF or document template that needs to be filled with client information.</p>
                 </div>
                 
@@ -254,7 +311,10 @@ const Dashboard = () => {
               
               <div className="mt-8 text-center">
                 <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateForm}>
-                  <Plus className="mr-2 h-4 w-4" /> Create Your First Form
+                  <Plus className="mr-2 h-4 w-4" /> 
+                  {
+                    forms.length > 0 ? "Create Your First Template" : "Create Your First Form"
+                  }
                 </Button>
               </div>
             </CardContent>
@@ -287,6 +347,26 @@ const Dashboard = () => {
                 <div className="text-2xl font-bold group-hover:text-blue-600">{forms.length}</div>
                 <p className="text-xs text-muted-foreground">
                   {forms.length === 0 ? "Create your first form" : "Forms created"}
+                </p>
+              </CardContent>
+            </Card>
+            <Card
+              onClick={() => navigate('/templates')}
+              className="cursor-pointer transition-colors duration-300 hover:bg-blue-50 hover:border-blue-200 group"
+            >
+              <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <CardTitle className="text-sm font-medium flex items-center">
+                  Templates
+                  <span className="ml-1 transform transition-transform duration-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1">
+                    <ArrowRight className="h-4 w-4 text-blue-600" />
+                  </span>
+                </CardTitle>
+                <FileCheck className="h-4 w-4 text-muted-foreground group-hover:text-blue-600" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold group-hover:text-blue-600">{templates.length}</div>
+                <p className="text-xs text-muted-foreground">
+                  {templates.length === 0 ? "Configure your first template" : "Templates configured"}
                 </p>
               </CardContent>
             </Card>
@@ -326,26 +406,7 @@ const Dashboard = () => {
                   {members.length === 0 ? "Invite your first member" : "Team members"}
                 </p>
               </CardContent>
-            </Card>
-            <Card
-            onClick={() => navigate('/account/settings')}
-            className="cursor-pointer transition-colors duration-300 hover:bg-blue-50 hover:border-blue-200 group">
-              <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium flex items-center">
-                  Account Settings
-                  <span className="ml-1 transform transition-transform duration-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1">
-                    <ArrowRight className="h-4 w-4 text-blue-600" />
-                  </span>
-                </CardTitle>
-                <Settings className="h-4 w-4 text-muted-foreground group-hover:text-blue-600" />
-              </CardHeader>
-              <CardContent>
-                <div className="text-2xl font-bold group-hover:text-blue-600">Manage</div>
-                <p className="text-xs text-muted-foreground">
-                  Configure your account
-                </p>
-              </CardContent>
-            </Card>
+            </Card>  
           </div>
         </div>
       </div>
