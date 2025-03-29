@@ -55,7 +55,7 @@ const TeamMembers = () => {
       try {
         setLoading(true);
         
-        // Query just the organization_members table instead of the view
+        // Query the organization_members table
         const { data, error } = await supabase
           .from('organization_members')
           .select('*')
@@ -64,8 +64,6 @@ const TeamMembers = () => {
         if (error) throw error;
         
         // Transform the data to match our TeamMember type
-        // Since we don't have access to email and metadata directly,
-        // we'll just use the user_id for now and display that
         const transformedMembers: TeamMember[] = data.map(member => ({
           id: member.id || '',
           organization_id: member.organization_id || '',
