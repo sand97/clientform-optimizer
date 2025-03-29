@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogIn } from 'lucide-react';
+import GoogleIcon from '@/components/ui/google-icon';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -108,7 +108,7 @@ const Login = () => {
           </div>
           
           <Button variant="outline" type="button" onClick={handleGoogleSignIn} className="w-full" disabled={isLoading}>
-            <LogIn className="mr-2 h-4 w-4" /> Sign in with Google
+            <GoogleIcon className="mr-2 h-4 w-4" /> Sign in with Google
           </Button>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">

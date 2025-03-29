@@ -9,7 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { LogIn } from 'lucide-react';
+import GoogleIcon from '@/components/ui/google-icon';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -162,7 +162,7 @@ const Register = () => {
           </div>
           
           <Button variant="outline" type="button" onClick={handleGoogleSignIn} className="w-full" disabled={isLoading}>
-            <LogIn className="mr-2 h-4 w-4" /> Continue with Google
+            <GoogleIcon className="mr-2 h-4 w-4" /> Continue with Google
           </Button>
         </CardContent>
         <CardFooter>
