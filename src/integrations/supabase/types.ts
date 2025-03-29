@@ -386,6 +386,13 @@ export type Database = {
             }
             Returns: boolean
           }
+      is_organization_member_view: {
+        Args: {
+          user_id: string
+          org_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       [_ in never]: never

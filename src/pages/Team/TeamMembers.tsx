@@ -1,5 +1,6 @@
+
 import { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -30,12 +31,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Check, Copy, Plus, UserPlus, X } from 'lucide-react';
+import { ArrowLeft, Check, Copy, Plus, UserPlus, X } from 'lucide-react';
 
 const TeamMembers = () => {
   const { organizationId } = useParams<{ organizationId: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
   
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
@@ -187,6 +189,11 @@ const TeamMembers = () => {
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-8">
+      <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-6">
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Dashboard
+      </Button>
+      
       <Card>
         <CardHeader>
           <CardTitle>Team Members</CardTitle>
