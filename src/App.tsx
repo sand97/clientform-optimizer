@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,6 +18,9 @@ import CreateOrganization from "./pages/Organizations/CreateOrganization";
 import FormBuilder from "./pages/Forms/FormBuilder";
 import FormView from "./pages/Forms/FormView";
 import NotFound from "./pages/NotFound";
+import FormListPage from "./pages/Forms/FormListPage";
+import TeamMembers from '@/pages/Team/TeamMembers';
+import InvitationsPage from '@/pages/Invitations/InvitationsPage';
 
 const queryClient = new QueryClient();
 
@@ -51,6 +53,10 @@ const App = () => (
               <Route path="/forms/create" element={<FormBuilder />} />
               <Route path="/forms/:id/edit" element={<FormBuilder />} />
               <Route path="/forms/:id" element={<FormView />} />
+              <Route path="/forms" element={<FormListPage />} />
+              <Route path="/forms/new" element={<FormBuilder />} />
+              <Route path="/team" element={<TeamMembers />} />
+              <Route path="/invitations" element={<InvitationsPage />} />
             </Route>
             
             {/* Catch-all route */}

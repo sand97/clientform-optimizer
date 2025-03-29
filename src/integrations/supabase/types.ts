@@ -176,7 +176,22 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      organization_members_with_users: {
+        Row: {
+          id: string
+          user_id: string
+          organization_id: string
+          role: string
+          created_at: string
+          email: string
+          user_metadata: {
+            full_name?: string
+            name?: string
+          }
+        }
+        Insert: never
+        Update: never
+      }
     }
     Functions: {
       [_ in never]: never

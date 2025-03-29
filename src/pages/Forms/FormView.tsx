@@ -144,7 +144,7 @@ const FormView = () => {
             Back to Dashboard
           </Button>
           <Button 
-            onClick={() => navigate(`/forms/${id}`)}
+            onClick={() => navigate(`/forms/${id}/edit`)}
           >
             <Edit className="mr-2 h-4 w-4" />
             Edit Form

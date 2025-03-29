@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
+import { useNavigate, useLocation, useParams } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -28,6 +28,9 @@ const formSchema = z.object({
   organization_id: z.string().optional()
 });
 
+// Define a type for the options object
+type FieldOptions = { options?: string };
+
 const fieldsSchema = z.object({
   fields: z.array(z.object({
     id: z.string(),
@@ -46,6 +49,9 @@ type FieldsValues = z.infer<typeof fieldsSchema>;
 const FormBuilder = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { id: formId } = useParams<{ id?: string }>();
+  console.log("formId", formId);
+  const isEditMode = Boolean(formId);
   const {
     toast
   } = useToast();
@@ -57,6 +63,7 @@ const FormBuilder = () => {
   const [formData, setFormData] = useState<FormValues | null>(null);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
+  const [initialFields, setInitialFields] = useState<Field[]>([]);
   const currentOrgId = location.state?.currentOrganizationId || '';
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -82,38 +89,121 @@ const FormBuilder = () => {
     }
   });
 
+  // Merged useEffect for loading initial data (organizations and form details)
   useEffect(() => {
-    const fetchOrganizations = async () => {
-      if (!user) return;
+    const loadInitialData = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
+      setLoading(true);
+      let fetchedOrgs: Organization[] = [];
+
       try {
-        const {
-          data,
-          error
-        } = await supabase.from('organization_members').select(`
-            organization_id,
-            organizations:organization_id(id, name)
-          `).eq('user_id', user.id);
-        if (error) throw error;
-        const orgs = data.map(item => ({
-          id: item.organizations.id,
-          name: item.organizations.name
+        // 1. Fetch Organizations first
+        const { data: orgData, error: orgError } = await supabase
+          .from('organization_members')
+          .select('organization_id, organizations:organization_id(id, name)')
+          .eq('user_id', user.id);
+
+        if (orgError) throw orgError;
+
+        fetchedOrgs = orgData.map(item => ({ 
+          id: item.organizations.id, 
+          name: item.organizations.name 
         }));
-        setOrganizations(orgs);
-        if (currentOrgId && orgs.some(org => org.id === currentOrgId)) {
-          form.setValue('organization_id', currentOrgId);
+        setOrganizations(fetchedOrgs);
+
+        // 2. Handle Edit Mode: Fetch form details and fields
+        if (isEditMode && formId) {
+          const { data: formDetails, error: formError } = await supabase
+            .from('forms')
+            .select('*')
+            .eq('id', formId)
+            .eq('user_id', user.id)
+            .single();
+
+          if (formError) throw formError;
+          if (!formDetails) throw new Error("Form not found or access denied.");
+
+          const { data: formFields, error: fieldsError } = await supabase
+            .from('fields')
+            .select('*')
+            .eq('form_id', formId)
+            .order('order_position', { ascending: true });
+
+          if (fieldsError) throw fieldsError;
+
+          const processedFields: Field[] = formFields.map(field => {
+             let parsedOptions: string | null = null;
+             if (field.options) {
+               try {
+                 const optionsObj = JSON.parse(String(field.options));
+                 if (typeof optionsObj === 'object' && optionsObj !== null && typeof optionsObj.options === 'string') {
+                   parsedOptions = optionsObj.options;
+                 }
+               } catch (parseError) {
+                 console.error('Failed to parse field options:', field.options, parseError);
+               }
+             }
+             return {
+               id: String(field.id), 
+               name: field.name,
+               type: field.type,
+               required: field.required,
+               placeholder: field.placeholder,
+               options: parsedOptions, 
+               order_position: field.order_position,
+             };
+           });
+
+          // Reset forms with fetched data
+          form.reset({
+            name: formDetails.name,
+            description: formDetails.description,
+            organization_id: formDetails.organization_id || 'personal'
+          });
+          fieldsForm.reset({ fields: processedFields });
+          setFormData(form.getValues()); // Set formData for display
+          setInitialFields(processedFields); // Store initial fields for diffing
+          setCurrentStep(1); // Ensure starting at step 1
+        
+        } else { // 3. Handle Create Mode: Reset forms to defaults
+          form.reset({
+            name: '',
+            description: '',
+            // Use currentOrgId from location state if available, else default
+            organization_id: currentOrgId || 'personal' 
+          });
+          // Ensure default field exists if fieldsForm is empty
+          if (fieldsForm.getValues('fields').length === 0) {
+             fieldsForm.reset({ fields: [{ id: uuidv4(), name: '', type: 'text', required: false, placeholder: null, options: null, order_position: 0 }] });
+          }
+          setFormData(null); // Clear form data state
+          setInitialFields([]); // Clear initial fields
+          setCurrentStep(1);
         }
-      } catch (error: any) {
+
+      } catch (error) {
+        console.error("Error loading initial data:", error);
+        const message = error instanceof Error ? error.message : "Could not load data.";
         toast({
-          title: "Error fetching organizations",
-          description: error.message,
-          variant: "destructive"
+          title: "Error Loading Data",
+          description: message,
+          variant: "destructive",
         });
+        // Optionally navigate away if loading fails critically
+        if (isEditMode) navigate('/dashboard'); 
       } finally {
         setLoading(false);
       }
     };
-    fetchOrganizations();
-  }, [user, toast, form, currentOrgId]);
+
+    loadInitialData();
+
+  // Dependencies: Trigger when mode, user, or relevant IDs change.
+  // form, fieldsForm, toast, navigate, supabase are stable references.
+  }, [isEditMode, formId, user, currentOrgId, form, fieldsForm, toast, navigate]);
 
   const onSubmitFormDetails = async (values: FormValues) => {
     setFormData(values);
@@ -149,6 +239,7 @@ const FormBuilder = () => {
     fieldsForm.setValue('fields', updatedFields);
   };
 
+  // Function to handle saving (both create and update)
   const saveForm = async (values: FieldsValues) => {
     if (!formData || !user) return;
     if (values.fields.length === 0) {
@@ -168,60 +259,154 @@ const FormBuilder = () => {
       return;
     }
     setIsSubmitting(true);
+
     try {
-      const {
-        data: formResult,
-        error: formError
-      } = await supabase.from('forms').insert({
-        name: formData.name,
-        description: formData.description || '',
-        user_id: user.id,
-        organization_id: formData.organization_id !== 'personal' ? formData.organization_id : null
-      }).select('id').single();
-      if (formError){
-        toast({
-          title: "Error creating form",
-          description: formError.message || "There was an error creating your form. Please try again.",
-          variant: "destructive"
-        });
-        return;
+      let currentFormId = formId; // Use existing formId if editing
+
+      // 1. Upsert Form Details
+      if (isEditMode && currentFormId) {
+        // Update existing form
+        const { error: updateFormError } = await supabase
+          .from('forms')
+          .update({
+            name: formData.name,
+            description: formData.description || '',
+            // user_id should likely not be updated, assuming ownership doesn't change
+            organization_id: formData.organization_id !== 'personal' ? formData.organization_id : null
+          })
+          .eq('id', currentFormId)
+          .eq('user_id', user.id); // Ensure user owns the form
+
+        if (updateFormError) {
+          toast({ title: "Error updating form", description: updateFormError.message, variant: "destructive" });
+          throw updateFormError; // Throw to prevent field updates if form update fails
+        }
+      } else {
+        // Insert new form
+        const { data: formResult, error: insertFormError } = await supabase
+          .from('forms')
+          .insert({
+            name: formData.name,
+            description: formData.description || '',
+            user_id: user.id,
+            organization_id: formData.organization_id !== 'personal' ? formData.organization_id : null
+          })
+          .select('id')
+          .single();
+
+        if (insertFormError) {
+          toast({ title: "Error creating form", description: insertFormError.message, variant: "destructive" });
+          throw insertFormError;
+        }
+        currentFormId = formResult.id; // Get the new form ID
       }
-      const formId = formResult.id;
-      const fieldsToInsert = values.fields.map(field => {
-        const options: any = {}
-        if(field.options)
-          options.options = field.options
-        return ({
-          form_id: formId,
+
+      if (!currentFormId) {
+        throw new Error("Form ID is missing after form insert/update.");
+      }
+
+      // 2. Sync Fields (Insert, Update, Delete)
+      const submittedFields = values.fields;
+      const initialFieldIds = new Set(initialFields.map(f => f.id));
+      const submittedFieldIds = new Set(submittedFields.map(f => f.id));
+
+      // Fields to Delete: In initialFields but not in submittedFields
+      const fieldsToDelete = initialFields.filter(f => !submittedFieldIds.has(f.id));
+      // Fields to Insert: In submittedFields but not in initialFields (these will have UUIDs)
+      // Assuming initial fields always have DB IDs (numeric or specific format)
+      // and new fields have client-generated UUIDs.
+      const fieldsToInsert = submittedFields.filter(f => !initialFieldIds.has(f.id));
+      // Fields to Update: In both initialFields and submittedFields
+      const fieldsToUpdate = submittedFields.filter(f => initialFieldIds.has(f.id));
+
+      // Use unknown[] for the operations array to accommodate Supabase builders
+      const operations: unknown[] = [];
+
+      // Delete operations
+      if (fieldsToDelete.length > 0) {
+        const deleteIds = fieldsToDelete.map(f => f.id);
+        operations.push(supabase.from('fields').delete().in('id', deleteIds));
+      }
+
+      // Insert operations
+      if (fieldsToInsert.length > 0) {
+        const insertData = fieldsToInsert.map(field => ({
+          form_id: currentFormId,
           name: field.name,
           type: field.type,
           required: field.required,
           placeholder: field.placeholder || null,
-          // options are jsonb in supabase
-          options: Object.keys(options).length > 0 ? JSON.stringify(options) : null,
+          options: field.options ? JSON.stringify({ options: field.options }) : null,
           order_position: field.order_position
-        })
-      });
-      const {
-        error: fieldsError
-      } = await supabase.from('fields').insert(fieldsToInsert);
-      if (fieldsError) throw fieldsError;
+          // Note: The database will generate its own primary key 'id' here
+        }));
+        operations.push(supabase.from('fields').insert(insertData));
+      }
+
+      // Update operations
+      if (fieldsToUpdate.length > 0) {
+        fieldsToUpdate.forEach(field => {
+          operations.push(
+            supabase
+              .from('fields')
+              .update({
+                name: field.name,
+                type: field.type,
+                required: field.required,
+                placeholder: field.placeholder || null,
+                options: field.options ? JSON.stringify({ options: field.options }) : null,
+                order_position: field.order_position
+              })
+              .eq('id', field.id) // Match the existing field ID
+              .eq('form_id', currentFormId as string) // Ensure it belongs to the correct form
+          );
+        });
+      }
+
+      // Execute all field operations
+      // Promise.allSettled can handle the Thenable Supabase builders
+      const results = await Promise.allSettled(operations);
+
+      // Check for errors in field operations
+      const fieldErrors = results.filter(r => r.status === 'rejected');
+      if (fieldErrors.length > 0) {
+        console.error("Errors saving fields:", fieldErrors);
+        // Attempt to get a specific error message
+        const firstError = (fieldErrors[0] as PromiseRejectedResult).reason;
+        const errorMessage = firstError?.message || "Some field operations failed.";
+        toast({ title: "Error Saving Fields", description: errorMessage, variant: "destructive" });
+        // Note: Depending on requirements, you might want to roll back form changes here
+        // or indicate partial success/failure.
+        throw new Error("Field synchronization failed."); 
+      }
+
       toast({
-        title: "Form created",
-        description: `Your form "${formData.name}" has been created successfully.`
+        title: isEditMode ? "Form Updated" : "Form Created",
+        description: `Your form "${formData.name}" has been ${isEditMode ? 'updated' : 'created'} successfully.`
       });
       navigate('/dashboard');
-    } catch (error: any) {
-      console.error('Error creating form:', error);
-      toast({
-        title: "Error creating form",
-        description: error.message || "There was an error creating your form. Please try again.",
-        variant: "destructive"
-      });
+
+    } catch (error) {
+      // Catch errors from form insert/update or field sync
+      console.error('Error saving form:', error);
+      const message = error instanceof Error ? error.message : `There was an error ${isEditMode ? 'updating' : 'creating'} your form.`;
+      // Avoid redundant toasts if already shown
+      if (!(error instanceof Error && error.message.includes('field operations failed'))) {
+         toast({
+            title: isEditMode ? "Error Updating Form" : "Error Creating Form",
+            description: message,
+            variant: "destructive"
+         });
+      }
     } finally {
       setIsSubmitting(false);
     }
   };
+
+  // Add loading state check
+  if (loading && isEditMode) {
+    return <div className="flex justify-center items-center h-screen">Loading form data...</div>;
+  }
 
   return <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
@@ -232,9 +417,14 @@ const FormBuilder = () => {
 
         {currentStep === 1 ? <Card>
             <CardHeader>
-              <CardTitle className="text-2xl">Create a New Form</CardTitle>
+              {/* Conditional Title */}
+              <CardTitle className="text-2xl">{isEditMode ? `Edit Form: ${formData?.name || '...'}` : 'Create a New Form'}</CardTitle>
+              {/* Conditional Description */}
               <CardDescription>
-                Start by giving your form a name and description. You'll be able to add fields and customize it in the next step.
+                {isEditMode 
+                  ? 'Update the name, description, and organization for your form.'
+                  : 'Start by giving your form a name and description. You\'ll be able to add fields and customize it in the next step.'
+                }
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -284,7 +474,8 @@ const FormBuilder = () => {
 
                   <div className="flex justify-end">
                     <Button type="submit">
-                      Continue to Add Fields
+                      {/* Conditional Button Text */}
+                      {isEditMode ? 'Continue to Edit Fields' : 'Continue to Add Fields'}
                       <ArrowRight className="ml-2 h-4 w-4" />
                     </Button>
                   </div>
@@ -295,9 +486,14 @@ const FormBuilder = () => {
             <Form {...fieldsForm}>
               <form onSubmit={fieldsForm.handleSubmit(saveForm)}>
                 <CardHeader>
-                  <CardTitle className="text-2xl">Add Fields to "{formData?.name}"</CardTitle>
+                  {/* Conditional Title */}
+                  <CardTitle className="text-2xl">{isEditMode ? `Edit Fields for "${formData?.name}"` : `Add Fields to "${formData?.name}"`}</CardTitle>
+                  {/* Conditional Description */}
                   <CardDescription>
-                    Your form needs at least one field. Add as many fields as you need.
+                    {isEditMode 
+                      ? 'Modify the fields for your form. You can add, remove, reorder, or change existing fields.'
+                      : 'Your form needs at least one field. Add as many fields as you need.'
+                    }
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -330,7 +526,8 @@ const FormBuilder = () => {
                     type="submit" 
                     disabled={isSubmitting || fieldsForm.watch('fields').length === 0}
                   >
-                    {isSubmitting ? "Saving..." : "Save Form"}
+                    {/* Conditional Button Text */}
+                    {isSubmitting ? "Saving..." : (isEditMode ? "Update Form" : "Save Form")}
                     <Save className="ml-2 h-4 w-4" />
                   </Button>
                 </div>

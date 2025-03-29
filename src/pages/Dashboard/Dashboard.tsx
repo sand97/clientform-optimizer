@@ -1,13 +1,13 @@
-import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/contexts/AuthContext';
+import OrganizationSelector from '@/components/layout/OrganizationSelector';
+import UserMenu from '@/components/layout/UserMenu';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { BarChart, Users, FileText, Settings, Plus, FormInput, FileCheck, Send, ArrowRight, Edit, Eye } from 'lucide-react';
-import UserMenu from '@/components/layout/UserMenu';
-import OrganizationSelector from '@/components/layout/OrganizationSelector';
+import { supabase } from '@/integrations/supabase/client';
+import { ArrowRight, BarChart, CheckCircle, FileCheck, FileText, FormInput, Plus, Send, Settings, Users } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface Organization {
   id: string;
@@ -24,6 +24,14 @@ interface Form {
   organization_name?: string;
 }
 
+interface Member {
+  id: string;
+  user_id: string;
+  organization_id: string;
+  role: string;
+  created_at: string;
+}
+
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -33,6 +41,7 @@ const Dashboard = () => {
   const [forms, setForms] = useState<Form[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
+  const [members, setMembers] = useState<Member[]>([]);
 
   useEffect(() => {
     if (user) {
@@ -130,6 +139,34 @@ const Dashboard = () => {
     fetchForms();
   }, [user, toast]);
 
+  useEffect(() => {
+    const fetchMembers = async () => {
+      if (!user) return;
+
+      try {
+        const { data: membersData, error: membersError } = await supabase
+          .from('organization_members')
+          .select('*')
+          .eq('organization_id', currentOrganization?.id);
+
+        if (membersError) throw membersError;
+
+        setMembers(membersData || []);
+      } catch (error) {
+        console.error('Error fetching members:', error);
+        toast({
+          title: "Error fetching members",
+          description: "Failed to load team members",
+          variant: "destructive",
+        });
+      }
+    };
+
+    if (currentOrganization) {
+      fetchMembers();
+    }
+  }, [user, toast, currentOrganization]);
+
   const handleCreateOrganization = () => {
     navigate('/organizations/create');
   };
@@ -191,7 +228,10 @@ const Dashboard = () => {
                   <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
                     <FormInput className="h-6 w-6 text-blue-600" />
                   </div>
-                  <h4 className="font-medium text-lg mb-2">1. Create Form</h4>
+                  <h4 className="font-medium text-lg mb-2 flex items-center gap-2">
+                    1. Create Form
+                    {forms.length > 0 && <CheckCircle className="h-5 w-5 text-blue-700" />}
+                  </h4>
                   <p className="text-gray-600 text-sm">Design a user-friendly web form that captures all the information needed for your document.</p>
                 </div>
                 
@@ -226,7 +266,13 @@ const Dashboard = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card 
               className="cursor-pointer transition-colors duration-300 hover:bg-blue-50 hover:border-blue-200 group"
-              onClick={() => navigate('/forms/create')}
+              onClick={() => {
+                if (forms.length > 0) {
+                  navigate('/forms');
+                } else {
+                  navigate('/forms/new');
+                }
+              }}
             >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium flex items-center">
@@ -261,7 +307,10 @@ const Dashboard = () => {
                 </p>
               </CardContent>
             </Card>
-            <Card className="cursor-pointer transition-colors duration-300 hover:bg-blue-50 hover:border-blue-200 group">
+            <Card 
+              className="cursor-pointer transition-colors duration-300 hover:bg-blue-50 hover:border-blue-200 group"
+              onClick={() => navigate('/team')}
+            >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium flex items-center">
                   Team Members
@@ -272,9 +321,9 @@ const Dashboard = () => {
                 <Users className="h-4 w-4 text-muted-foreground group-hover:text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold group-hover:text-blue-600">1</div>
+                <div className="text-2xl font-bold group-hover:text-blue-600">{members.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  Just you for now
+                  {members.length === 0 ? "Invite your first member" : "Team members"}
                 </p>
               </CardContent>
             </Card>
@@ -297,52 +346,6 @@ const Dashboard = () => {
             </Card>
           </div>
         </div>
-
-        {forms.length > 0 && (
-          <div className="mb-8">
-            <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Your Forms</h2>
-              <Button onClick={handleCreateForm} size="sm">
-                <Plus className="mr-2 h-4 w-4" /> New Form
-              </Button>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {forms.map((form) => (
-                <Card key={form.id} className="overflow-hidden hover:border-blue-200 transition-colors">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-lg">{form.name}</CardTitle>
-                    {form.organization_name && (
-                      <p className="text-xs text-blue-600 font-medium">
-                        {form.organization_name}
-                      </p>
-                    )}
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-500 mb-4 line-clamp-2">{form.description || "No description"}</p>
-                    <div className="flex justify-end space-x-2">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-gray-500"
-                        onClick={() => handleViewForm(form.id)}
-                      >
-                        <Eye className="h-4 w-4 mr-1" /> View
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="text-gray-500"
-                        onClick={() => navigate(`/forms/${form.id}`)}
-                      >
-                        <Edit className="h-4 w-4 mr-1" /> Edit
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );
