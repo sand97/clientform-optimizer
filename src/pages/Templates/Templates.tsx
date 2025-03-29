@@ -1,13 +1,5 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/contexts/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { ArrowLeft, FileCheck, Plus, Trash2, Upload } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
 import {
   Table,
   TableBody,
@@ -16,6 +8,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useAuth } from '@/contexts/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
+import { ArrowLeft, Trash2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 interface Template {
   id: string;
@@ -240,67 +238,13 @@ const Templates = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>Upload New Template</CardTitle>
-                <CardDescription>
-                  Select a PDF template and associate it with a form
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="pdf">PDF Template</Label>
-                      <div className="relative">
-                        <Input
-                          id="pdf"
-                          type="file"
-                          accept=".pdf"
-                          onChange={handleFileChange}
-                          className="opacity-0 absolute inset-0 w-full h-full cursor-pointer"
-                        />
-                        <div className="border rounded-md p-4 text-center">
-                          <Upload className="h-8 w-8 mx-auto mb-2 text-gray-400" />
-                          <div className="text-sm text-gray-600">
-                            {selectedFile ? selectedFile.name : 'Choose PDF file'}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label htmlFor="form">Form</Label>
-                      <select
-                        id="form"
-                        className="w-full rounded-md border border-input bg-background px-3 py-2"
-                        value={selectedForm}
-                        onChange={(e) => setSelectedForm(e.target.value)}
-                      >
-                        <option value="">Select a form</option>
-                        {forms.map((form) => (
-                          <option key={form.id} value={form.id}>
-                            {form.name}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                  </div>
-
-                  <div className="flex justify-end">
-                    <Button
-                      onClick={handleUpload}
-                      disabled={!selectedFile || !selectedForm}
-                    >
-                      <Plus className="mr-2 h-4 w-4" />
-                      Upload Template
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          {
+            templates.length === 0 ? (
+              <div className="text-center text-gray-500">
+                No templates found
+              </div>
+            )
+          :
 
           <Table>
             <TableHeader>
@@ -333,7 +277,7 @@ const Templates = () => {
                 </TableRow>
               ))}
             </TableBody>
-          </Table>
+          </Table>}
         </CardContent>
       </Card>
     </div>
