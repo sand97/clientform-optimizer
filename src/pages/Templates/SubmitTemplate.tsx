@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -71,7 +72,7 @@ export default function SubmitTemplate() {
 
         // Initialize form data with empty values
         const initialFormData: Record<string, string> = {};
-        fieldsData.forEach((field: Field) => {
+        fieldsData.forEach((field: any) => {
           initialFormData[field.id] = '';
         });
         setFormData(initialFormData);
@@ -103,7 +104,7 @@ export default function SubmitTemplate() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!template) return;
+    if (!template || !template.form) return;
 
     try {
       // Create submission record
@@ -144,7 +145,7 @@ export default function SubmitTemplate() {
   const handleSubmitAnother = () => {
     // Clear form data
     const initialFormData: Record<string, string> = {};
-    if (template) {
+    if (template && template.form) {
       template.form.fields.forEach((field: Field) => {
         initialFormData[field.id] = '';
       });
@@ -161,7 +162,7 @@ export default function SubmitTemplate() {
     );
   }
 
-  if (!template) {
+  if (!template || !template.form) {
     return (
       <div className="max-w-3xl mx-auto px-4 py-8">
         <p>Template not found</p>

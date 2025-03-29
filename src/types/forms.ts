@@ -1,3 +1,4 @@
+
 export interface Field {
   id: string;
   name: string;
@@ -28,6 +29,13 @@ export interface Template {
   positions: Position[] | any;
   updated_at: string;
   form_name?: string;
+  form?: {
+    id: string;
+    name: string;
+    description?: string;
+    organization_id: string;
+    fields: Field[];
+  };
 }
 
 export interface FormData {
