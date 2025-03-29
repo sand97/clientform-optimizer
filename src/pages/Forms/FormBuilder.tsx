@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -31,7 +30,6 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 
-// Form schema with validation
 const formSchema = z.object({
   name: z.string().min(3, {
     message: "Form name must be at least 3 characters long",
@@ -40,7 +38,6 @@ const formSchema = z.object({
   organization_id: z.string().optional(),
 });
 
-// Field schema with validation
 const fieldSchema = z.object({
   name: z.string().min(1, {
     message: "Field name is required",
@@ -55,7 +52,6 @@ const fieldSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 type FieldValues = z.infer<typeof fieldSchema>;
 
-// Field type for our application
 interface Field {
   id: string;
   name: string;
@@ -92,7 +88,6 @@ const FormBuilder = () => {
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Initialize form with react-hook-form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -112,7 +107,6 @@ const FormBuilder = () => {
     },
   });
 
-  // Fetch organizations when component mounts
   useEffect(() => {
     const fetchOrganizations = async () => {
       if (!user) return;
@@ -165,7 +159,6 @@ const FormBuilder = () => {
 
     setFields([...fields, newField]);
     
-    // Reset field form
     fieldForm.reset({
       name: '',
       type: 'text',
@@ -199,7 +192,6 @@ const FormBuilder = () => {
     setIsSubmitting(true);
     
     try {
-      // Insert form
       const { data: formResult, error: formError } = await supabase
         .from('forms')
         .insert({
@@ -213,7 +205,6 @@ const FormBuilder = () => {
 
       if (formError) throw formError;
       
-      // Insert fields
       const formId = formResult.id;
       const fieldsToInsert = fields.map(field => ({
         form_id: formId,
@@ -236,7 +227,6 @@ const FormBuilder = () => {
         description: `Your form "${formData.name}" has been created successfully.`,
       });
       
-      // Navigate to the dashboard
       navigate('/dashboard');
     } catch (error: any) {
       console.error('Error creating form:', error);
@@ -318,7 +308,7 @@ const FormBuilder = () => {
                               </SelectTrigger>
                             </FormControl>
                             <SelectContent>
-                              <SelectItem value="">Personal Form</SelectItem>
+                              <SelectItem value="personal">Personal Form</SelectItem>
                               {organizations.map((org) => (
                                 <SelectItem key={org.id} value={org.id}>
                                   {org.name}
