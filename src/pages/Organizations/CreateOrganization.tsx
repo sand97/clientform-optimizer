@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -10,7 +11,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { LogOut } from 'lucide-react';
+import { Building, LogOut, Plus } from 'lucide-react';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -150,13 +151,14 @@ const CreateOrganization = () => {
                   <FormItem>
                     <FormLabel>Organization Name</FormLabel>
                     <FormControl>
-                      <Input placeholder="Acme Inc." {...field} />
+                      <Input placeholder="Acme Inc." icon={<Building size={18} />} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
+                <Plus size={18} />
                 {isLoading ? 'Creating...' : 'Create Organization'}
               </Button>
             </form>

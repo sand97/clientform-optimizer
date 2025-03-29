@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import GoogleIcon from '@/components/ui/google-icon';
+import { KeyRound, Mail, User, UserRound } from 'lucide-react';
 
 const registerSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -83,7 +84,7 @@ const Register = () => {
                     <FormItem>
                       <FormLabel>First Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="John" {...field} />
+                        <Input placeholder="John" icon={<User size={18} />} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -96,7 +97,7 @@ const Register = () => {
                     <FormItem>
                       <FormLabel>Last Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="Doe" {...field} />
+                        <Input placeholder="Doe" icon={<UserRound size={18} />} {...field} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -111,7 +112,7 @@ const Register = () => {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="you@example.com" {...field} />
+                      <Input type="email" placeholder="you@example.com" icon={<Mail size={18} />} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -125,7 +126,7 @@ const Register = () => {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input type="password" placeholder="••••••••" icon={<KeyRound size={18} />} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -139,7 +140,7 @@ const Register = () => {
                   <FormItem>
                     <FormLabel>Confirm Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input type="password" placeholder="••••••••" icon={<KeyRound size={18} />} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>

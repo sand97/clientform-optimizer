@@ -10,6 +10,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import GoogleIcon from '@/components/ui/google-icon';
+import { KeyRound, LogIn, Mail } from 'lucide-react';
 
 const loginSchema = z.object({
   email: z.string().email('Please enter a valid email'),
@@ -73,7 +74,7 @@ const Login = () => {
                   <FormItem>
                     <FormLabel>Email</FormLabel>
                     <FormControl>
-                      <Input type="email" placeholder="you@example.com" {...field} />
+                      <Input type="email" placeholder="you@example.com" icon={<Mail size={18} />} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -86,13 +87,14 @@ const Login = () => {
                   <FormItem>
                     <FormLabel>Password</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
+                      <Input type="password" placeholder="••••••••" icon={<KeyRound size={18} />} {...field} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
               <Button type="submit" className="w-full" disabled={isLoading}>
+                <LogIn size={18} />
                 {isLoading ? 'Signing in...' : 'Sign In'}
               </Button>
             </form>
@@ -108,7 +110,7 @@ const Login = () => {
           </div>
           
           <Button variant="outline" type="button" onClick={handleGoogleSignIn} className="w-full" disabled={isLoading}>
-            <GoogleIcon className="mr-2 h-4 w-4" /> Sign in with Google
+            <GoogleIcon className="h-4 w-4" /> Sign in with Google
           </Button>
         </CardContent>
         <CardFooter className="flex flex-col space-y-2">
