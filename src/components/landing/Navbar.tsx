@@ -27,8 +27,10 @@ const Navbar = () => {
             <a href="#pricing" className="text-gray-600 hover:text-blue-500 transition-colors">
               Pricing
             </a>
-            <Button variant="outline" className="ml-2">Log in</Button>
-            <Button>Get Started</Button>
+            <div className="flex space-x-2">
+              <Button variant="outline" className="mr-1">Log in</Button>
+              <Button>Get Started</Button>
+            </div>
           </div>
           
           {/* Mobile Menu Button */}

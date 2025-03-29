@@ -26,7 +26,7 @@ const CTASection = () => {
               <Button 
                 size="lg" 
                 variant="outline" 
-                className="border-white text-white hover:bg-blue-700 hover:text-white px-8 py-6 text-lg"
+                className="border-white text-white hover:bg-blue-700 px-8 py-6 text-lg"
               >
                 Book a demo
               </Button>
