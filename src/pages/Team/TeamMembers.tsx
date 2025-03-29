@@ -55,7 +55,7 @@ const TeamMembers = () => {
       try {
         setLoading(true);
         
-        // Query the organization_members table
+        // Query the organization_members table directly (not the view)
         const { data, error } = await supabase
           .from('organization_members')
           .select('*')

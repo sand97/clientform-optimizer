@@ -61,7 +61,7 @@ const App = () => (
               <Route path="/forms/:id" element={<FormView />} />
               <Route path="/forms" element={<FormListPage />} />
               <Route path="/forms/new" element={<FormBuilder />} />
-              <Route path="/team" element={<TeamMembers />} />
+              <Route path="/team/:organizationId" element={<TeamMembers />} />
               <Route path="/invitations" element={<InvitationsPage />} />
               <Route path="/account/settings" element={<ManageAccount />} />
               <Route path="/templates" element={<Templates />} />
