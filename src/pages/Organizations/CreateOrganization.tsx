@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -57,7 +56,6 @@ const CreateOrganization = () => {
 
     setIsLoading(true);
     try {
-      // Create the organization
       const { data: orgData, error: orgError } = await supabase
         .from('organizations')
         .insert({
@@ -69,7 +67,6 @@ const CreateOrganization = () => {
 
       if (orgError) throw orgError;
 
-      // Add the creator as a member with 'admin' role
       const { error: memberError } = await supabase
         .from('organization_members')
         .insert({
@@ -85,7 +82,6 @@ const CreateOrganization = () => {
         description: `${data.name} has been created successfully.`,
       });
       
-      // Redirect to organization dashboard
       navigate('/dashboard');
     } catch (error: any) {
       toast({
@@ -163,27 +159,6 @@ const CreateOrganization = () => {
               <Button type="submit" className="w-full" disabled={isLoading}>
                 {isLoading ? 'Creating...' : 'Create Organization'}
               </Button>
-              
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button type="button" variant="outline" className="w-full mt-2">
-                    <LogOut className="h-4 w-4 mr-2" />
-                    Change Account
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      You will be logged out of your current account and redirected to the login page.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                    <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
             </form>
           </Form>
         </CardContent>
