@@ -17,21 +17,16 @@ const FieldCard = ({ field, onRemove, index }: FieldCardProps) => {
   
   return (
     <Card className="bg-white border rounded-xl overflow-hidden shadow-sm relative">
-      {/* Field Type Row */}
+      {/* Field Type and Required Row - combined into one row */}
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center space-x-2">
-          <span className="text-lg font-medium">{fieldTypeLabel}</span>
+          <span className="text-lg font-medium">Field {fieldTypeLabel}</span>
         </div>
-        <div className="flex items-center space-x-2">
-          <ArrowDown className="h-5 w-5 text-gray-500" />
-        </div>
-      </div>
-      
-      {/* Required Row */}
-      <div className="flex items-center justify-between p-4 border-b">
-        <span className="text-lg font-medium">Requis</span>
-        <div className={`h-6 w-6 rounded-md border ${field.required ? 'bg-primary border-primary' : 'bg-transparent border-gray-300'} flex items-center justify-center`}>
-          {field.required && <Check className="h-4 w-4 text-white" />}
+        <div className="flex items-center space-x-4">
+          <span className="text-base font-medium">Requis</span>
+          <div className={`h-6 w-6 rounded-md border ${field.required ? 'bg-primary border-primary' : 'bg-transparent border-gray-300'} flex items-center justify-center`}>
+            {field.required && <Check className="h-4 w-4 text-white" />}
+          </div>
         </div>
       </div>
       
