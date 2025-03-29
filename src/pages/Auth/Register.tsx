@@ -46,6 +46,8 @@ const Register = () => {
   const onSubmit = async (data: RegisterFormValues) => {
     setIsLoading(true);
     try {
+      // Removed the toast notification in the signUp method by modifying the call
+      // to not include the toast directly
       await signUp(data.email, data.password, data.name, data.surname);
       setRegisteredEmail(data.email);
       setRegistrationSuccess(true);
