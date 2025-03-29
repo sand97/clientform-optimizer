@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Field {
@@ -36,6 +36,9 @@ export const FieldSelector = ({
       <Card className="shadow-lg">
         <CardHeader className="sticky top-0 py-6 bg-background z-10 border-b">
           <CardTitle className="text-lg font-bold">Form Fields</CardTitle>
+          <CardDescription>
+            Select the fields you want to include in your form and click on them to map them to the PDF.
+          </CardDescription>
         </CardHeader>
         <CardContent className="p-0">
           <ScrollArea className="h-[calc(100vh-16rem)]">

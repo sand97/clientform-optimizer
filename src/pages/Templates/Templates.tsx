@@ -11,7 +11,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowLeft, Trash2 } from 'lucide-react';
+import { ArrowLeft, Share2, Trash2 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
@@ -19,13 +19,13 @@ interface Template {
   id: string;
   form_id: string;
   pdf_url: string;
+  original_pdf_name: string;
   positions: Array<{
     x: number;
     y: number;
     page: number;
     fieldId: string;
   }>;
-  created_at: string;
   updated_at: string;
   form_name?: string;
 }
@@ -215,6 +215,10 @@ const Templates = () => {
     }
   };
 
+  const handleShare = (template: Template) => {
+    // Implementation of handleShare function
+  };
+
   if (loading) {
     return (
       <div className="max-w-7xl mx-auto px-4 py-8">
@@ -232,52 +236,55 @@ const Templates = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-2xl">PDF Templates</CardTitle>
+          <CardTitle className="text-xl">PDF Templates</CardTitle>
           <CardDescription>
             Manage your PDF templates for form filling
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {
-            templates.length === 0 ? (
-              <div className="text-center text-gray-500">
-                No templates found
-              </div>
-            )
-          :
-
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Form</TableHead>
-                <TableHead>Created At</TableHead>
-                <TableHead>Updated At</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {templates.map((template) => (
-                <TableRow key={template.id}>
-                  <TableCell>{template.form_name}</TableCell>
-                  <TableCell>
-                    {new Date(template.created_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    {new Date(template.updated_at).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleDelete(template.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </TableCell>
+          {templates.length === 0 ? (
+            <div className="text-center text-gray-500">
+              No templates found
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Form</TableHead>
+                  <TableHead>PDF Name</TableHead>
+                  <TableHead>Last Updated</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>}
+              </TableHeader>
+              <TableBody>
+                {templates.map((template) => (
+                  <TableRow key={template.id}>
+                    <TableCell>{template.form_name}</TableCell>
+                    <TableCell>{template.original_pdf_name}</TableCell>
+                    <TableCell>
+                      {new Date(template.updated_at).toLocaleDateString()}
+                    </TableCell>
+                    <TableCell className="text-right space-x-2">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleShare(template)}
+                      >
+                        <Share2 className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleDelete(template.id)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
         </CardContent>
       </Card>
     </div>

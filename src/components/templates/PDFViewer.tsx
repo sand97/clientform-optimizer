@@ -22,6 +22,8 @@ interface Position {
   y: number;
   page: number;
   fieldId: string;
+  pageWidth: number;
+  pageHeight: number;
 }
 
 interface PDFViewerProps {
@@ -71,6 +73,8 @@ export const PDFViewer = ({
       y,
       page: pageNumber,
       fieldId: selectedField.id,
+      pageWidth: rect.width,
+      pageHeight: rect.height
     });
   };
 

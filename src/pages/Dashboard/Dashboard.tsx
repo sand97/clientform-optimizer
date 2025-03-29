@@ -280,32 +280,37 @@ const Dashboard = () => {
               
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
                 <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                    <FormInput className="h-6 w-6 text-blue-600" />
+                  <div className={`w-12 h-12 ${forms.length > 0 ? 'bg-blue-50' : 'bg-gray-100'} rounded-full flex items-center justify-center mb-4`}>
+                    <FormInput className={`h-6 w-6 ${forms.length > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
                   </div>
-                  <h4 className="font-medium text-lg mb-2 flex items-center gap-2">
+                  <h4 className={`font-medium text-lg mb-2 flex items-center gap-2 ${forms.length > 0 ? 'text-blue-700' : 'text-gray-700'}`}>
                     1. Create Form
-                    {forms.length > 0 && <CheckCircle className="h-5 w-5 text-blue-700" />}
+                    {forms.length > 0 && <CheckCircle className="h-5 w-5 text-blue-600" />}
                   </h4>
-                  <p className="text-gray-600 text-sm">Design a user-friendly web form that captures all the information needed for your document.</p>
+                  <p className="text-sm text-gray-600">
+                    Design a user-friendly web form that captures all the information needed for your document.
+                  </p>
                 </div>
                 
                 <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                    <FileCheck className="h-6 w-6 text-blue-600" />
+                  <div className={`w-12 h-12 ${templates.length > 0 ? 'bg-blue-50' : 'bg-gray-100'} rounded-full flex items-center justify-center mb-4`}>
+                    <FileCheck className={`h-6 w-6 ${templates.length > 0 ? 'text-blue-600' : 'text-gray-400'}`} />
                   </div>
-                  <h4 className="font-medium text-lg mb-2">2. Configure Template
-                    {templates.length > 0 && <CheckCircle className="h-5 w-5 text-blue-700" />}
+                  <h4 className={`font-medium text-lg mb-2 flex items-center gap-2 ${templates.length > 0 ? 'text-blue-700' : 'text-gray-700'}`}>
+                    2. Configure Template
+                    {templates.length > 0 && <CheckCircle className="h-5 w-5 text-blue-600" />}
                   </h4>
-                  <p className="text-gray-600 text-sm">Upload your existing PDF or document template that needs to be filled with client information.</p>
+                  <p className="text-sm text-gray-600">
+                    Upload your existing PDF or document template that needs to be filled with client information.
+                  </p>
                 </div>
                 
                 <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
-                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
-                    <Send className="h-6 w-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
+                    <Send className="h-6 w-6 text-gray-400" />
                   </div>
-                  <h4 className="font-medium text-lg mb-2">3. Share Link</h4>
-                  <p className="text-gray-600 text-sm">Send your clients a link to fill out the form on any device with real-time validation.</p>
+                  <h4 className="font-medium text-lg mb-2 text-gray-700">3. Share Link</h4>
+                  <p className="text-sm text-gray-600">Send your clients a link to fill out the form on any device with real-time validation.</p>
                 </div>
               </div>
               

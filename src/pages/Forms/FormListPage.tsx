@@ -122,7 +122,7 @@ const FormListPage = () => {
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
-            <CardTitle className="text-2xl">Your Forms</CardTitle>
+            <CardTitle className="text-xl">Your Forms</CardTitle>
             <CardDescription>
               Manage your created forms here. Create new forms or edit existing ones.
             </CardDescription>

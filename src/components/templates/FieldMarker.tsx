@@ -13,6 +13,8 @@ interface Position {
   y: number;
   page: number;
   fieldId: string;
+  pageWidth: number;
+  pageHeight: number;
 }
 
 interface FieldMarkerProps {
@@ -51,7 +53,9 @@ export const FieldMarker = ({
     currentPosition.current = {
       ...position,
       x: boundedX,
-      y: boundedY
+      y: boundedY,
+      pageWidth: rect.width,
+      pageHeight: rect.height
     };
 
     onPositionChange(currentPosition.current);
