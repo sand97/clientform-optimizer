@@ -483,23 +483,23 @@ const FormBuilder = () => {
                       />
                     ))}
                   </div>
-                  
-                  <Button 
-                    variant="default"
-                    className="w-full mt-4"
-                    onClick={() => {
-                      const element = document.querySelector('form button[type="submit"]');
-                      if (element) {
-                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                      }
-                    }}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Add Another Field
-                  </Button>
                 </CardContent>
               </Card>
             )}
+            
+            <Button 
+              variant="default"
+              className="w-full"
+              onClick={() => {
+                const element = document.querySelector('form button[type="submit"]');
+                if (element) {
+                  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+              }}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add Another Field
+            </Button>
 
             <div className="flex justify-between">
               <Button 
