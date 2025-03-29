@@ -309,7 +309,7 @@ const Dashboard = () => {
                   <div className="w-12 h-12 bg-gray-100 rounded-full flex items-center justify-center mb-4">
                     <Send className="h-6 w-6 text-gray-400" />
                   </div>
-                  <h4 className="font-medium text-lg mb-2 text-gray-700">3. Share Link</h4>
+                  <h4 className="font-medium text-lg mb-2 text-gray-700">3. Get Submissions</h4>
                   <p className="text-sm text-gray-600">Send your clients a link to fill out the form on any device with real-time validation.</p>
                 </div>
               </div>
@@ -318,7 +318,9 @@ const Dashboard = () => {
                 <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateForm}>
                   <Plus className="mr-2 h-4 w-4" /> 
                   {
-                    forms.length > 0 ? "Create Your First Template" : "Create Your First Form"
+                    forms.length === 0 ? "Create Your First Form" :
+                    templates.length === 0 ? "Create Your First Template" :
+                    "Share your template with your clients"
                   }
                 </Button>
               </div>
