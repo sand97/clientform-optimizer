@@ -34,7 +34,7 @@ import {
 import { ArrowLeft, Check, Copy, Plus, UserPlus, X } from 'lucide-react';
 
 const TeamMembers = () => {
-  const { organizationId } = useParams<{ organizationId: string }>();
+  const { organizationId } = useParams<{ organizationId?: string }>();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -46,11 +46,55 @@ const TeamMembers = () => {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('member');
   const [copied, setCopied] = useState(false);
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(null);
+  const [userOrganizations, setUserOrganizations] = useState<{id: string, name: string}[]>([]);
+
+  // Fetch user's organizations if no organizationId is provided
+  useEffect(() => {
+    const fetchUserOrganizations = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', user.id);
+          
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          // Get organization details
+          const orgIds = data.map(item => item.organization_id);
+          const { data: orgsData, error: orgsError } = await supabase
+            .from('organizations')
+            .select('id, name')
+            .in('id', orgIds);
+            
+          if (orgsError) throw orgsError;
+          
+          setUserOrganizations(orgsData || []);
+          
+          // If no organizationId was provided in the URL, use the first one
+          if (!organizationId && orgsData && orgsData.length > 0) {
+            setSelectedOrganizationId(orgsData[0].id);
+          }
+        }
+      } catch (error) {
+        console.error('Error fetching user organizations:', error);
+      }
+    };
+    
+    if (!organizationId) {
+      fetchUserOrganizations();
+    } else {
+      setSelectedOrganizationId(organizationId);
+    }
+  }, [user, organizationId]);
 
   // Fetch team members
   useEffect(() => {
     const fetchMembers = async () => {
-      if (!organizationId) return;
+      if (!selectedOrganizationId) return;
       
       try {
         setLoading(true);
@@ -59,7 +103,7 @@ const TeamMembers = () => {
         const { data, error } = await supabase
           .from('organization_members')
           .select('*')
-          .eq('organization_id', organizationId);
+          .eq('organization_id', selectedOrganizationId);
           
         if (error) throw error;
         
@@ -93,17 +137,19 @@ const TeamMembers = () => {
       }
     };
     
-    fetchMembers();
-  }, [organizationId, user, toast]);
+    if (selectedOrganizationId) {
+      fetchMembers();
+    }
+  }, [selectedOrganizationId, user, toast]);
 
   const handleInvite = async () => {
-    if (!organizationId || !inviteEmail || !inviteRole) return;
+    if (!selectedOrganizationId || !inviteEmail || !inviteRole) return;
 
     try {
       const { error } = await supabase.functions.invoke('invite-to-organization', {
         body: {
           email: inviteEmail,
-          organization_id: organizationId,
+          organization_id: selectedOrganizationId,
           role: inviteRole,
         },
       });
@@ -134,13 +180,13 @@ const TeamMembers = () => {
   };
 
   const handleRemove = async (memberId: string) => {
-    if (!organizationId) return;
+    if (!selectedOrganizationId) return;
 
     try {
       const { error } = await supabase
         .from('organization_members')
         .delete()
-        .eq('organization_id', organizationId)
+        .eq('organization_id', selectedOrganizationId)
         .eq('user_id', memberId);
 
       if (error) throw error;
@@ -161,8 +207,10 @@ const TeamMembers = () => {
   };
 
   const handleShare = () => {
+    if (!selectedOrganizationId) return;
+    
     const baseUrl = window.location.origin;
-    const url = `${baseUrl}/join/${organizationId}`;
+    const url = `${baseUrl}/join/${selectedOrganizationId}`;
     navigator.clipboard.writeText(url);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
@@ -178,6 +226,44 @@ const TeamMembers = () => {
     // Since we don't have access to the user's name directly
     return `User ${member.user_id.substring(0, 8)}...`;
   };
+
+  // If no organization is selected yet and we're loading orgs, show loading
+  if (!selectedOrganizationId && userOrganizations.length === 0) {
+    return <p>Loading organizations...</p>;
+  }
+
+  // If we have organizations but none selected, show a selector
+  if (!selectedOrganizationId && userOrganizations.length > 0) {
+    return (
+      <div className="max-w-3xl mx-auto px-4 py-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Select an Organization</CardTitle>
+            <CardDescription>
+              Please select an organization to view team members
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              {userOrganizations.map(org => (
+                <Button 
+                  key={org.id} 
+                  variant="outline" 
+                  className="w-full text-left justify-start h-auto py-3"
+                  onClick={() => navigate(`/team/${org.id}`)}
+                >
+                  <div>
+                    <div className="font-medium">{org.name}</div>
+                    <div className="text-sm text-gray-500">View team members</div>
+                  </div>
+                </Button>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   if (loading) {
     return <p>Loading team members...</p>;
