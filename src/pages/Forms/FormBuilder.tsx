@@ -16,7 +16,6 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useAuth } from '@/contexts/AuthContext';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import FieldCard from '@/components/forms/FieldCard';
 import { FIELD_TYPES } from '@/constants/formFields';
 import { Field, Organization } from '@/types/forms';
 const formSchema = z.object({
@@ -27,6 +26,7 @@ const formSchema = z.object({
   organization_id: z.string().optional()
 });
 const fieldSchema = z.object({
+  id: z.string().optional(),
   name: z.string().min(1, {
     message: "Field name is required"
   }),
@@ -34,7 +34,8 @@ const fieldSchema = z.object({
     message: "Field type is required"
   }),
   required: z.boolean().default(false),
-  placeholder: z.string().optional()
+  placeholder: z.string().optional(),
+  options: z.string().optional()
 });
 type FormValues = z.infer<typeof formSchema>;
 type FieldValues = z.infer<typeof fieldSchema>;
@@ -69,7 +70,8 @@ const FormBuilder = () => {
       name: '',
       type: 'text',
       required: false,
-      placeholder: ''
+      placeholder: '',
+      options: ''
     }
   });
   useEffect(() => {
@@ -111,23 +113,7 @@ const FormBuilder = () => {
     setFormData(values);
     setCurrentStep(2);
   };
-  const addField = (values: FieldValues) => {
-    const newField: Field = {
-      id: uuidv4(),
-      name: values.name,
-      type: values.type,
-      required: values.required,
-      placeholder: values.placeholder,
-      order_position: fields.length
-    };
-    setFields([...fields, newField]);
-    fieldForm.reset({
-      name: '',
-      type: 'text',
-      required: false,
-      placeholder: ''
-    });
-  };
+  
   const removeField = (id: string) => {
     const updatedFields = fields.filter(field => field.id !== id).map((field, index) => ({
       ...field,
@@ -208,6 +194,17 @@ const FormBuilder = () => {
       });
     }
   };
+  const addNewField = () => {
+    const newField: Field = {
+      id: uuidv4(),
+      name: '',
+      type: 'text',
+      required: false,
+      placeholder: '',
+      order_position: fields.length
+    };
+    setFields([...fields, newField]);
+  };
   return <div className="min-h-screen bg-gray-50">
       <div className="max-w-4xl mx-auto px-4 py-8">
         <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-6">
@@ -277,7 +274,7 @@ const FormBuilder = () => {
               </Form>
             </CardContent>
           </Card> : <div className="space-y-6">
-            <Card>
+            
               <CardHeader>
                 <CardTitle className="text-2xl">Add Fields to "{formData?.name}"</CardTitle>
                 <CardDescription>
@@ -285,105 +282,132 @@ const FormBuilder = () => {
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <Form {...fieldForm}>
-                  <form onSubmit={fieldForm.handleSubmit(addField)} className="space-y-4">
-                    <Card className="bg-white shadow-sm">
-                      <CardContent className="p-6 px-0 py-0">
-                        <div className="space-y-4">
-                          <div className="flex items-center justify-between border-b pb-3">
-                            <span className="text-lg font-medium">Field Type</span>
-                            <FormField control={fieldForm.control} name="type" render={({
-                          field
-                        }) => <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger className="w-[180px]">
-                                      <SelectValue placeholder="Select a field type" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {FIELD_TYPES.map(type => <SelectItem key={type.value} value={type.value}>
-                                        {type.label}
-                                      </SelectItem>)}
-                                  </SelectContent>
-                                </Select>} />
+                <div className="space-y-4">
+                  {fields.map((field) => (
+                    <Card key={field.id} className="bg-white shadow-sm">
+                      <CardContent className="p-3">
+                        <div className="flex w-full items-center justify-between pb-3">
+                          <div className="flex items-center space-x-4">
+                            <Select 
+                              defaultValue={field.type}
+                              onValueChange={(value) => {
+                                const updatedFields = fields.map(f => 
+                                  f.id === field.id 
+                                    ? { ...f, type: value, options: value === 'dropdown' || value === 'checkbox' ? '' : undefined }
+                                    : f
+                                );
+                                setFields(updatedFields);
+                              }}
+                            >
+                              <SelectTrigger className="w-[180px]">
+                                <SelectValue placeholder="Select a field type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {FIELD_TYPES.map(type => (
+                                  <SelectItem key={type.value} value={type.value}>
+                                    Field {type.label}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <div className="flex items-center space-x-2">
+                              <span className="text-lg font-medium">Required</span>
+                              <Checkbox id="required" checked={field.required} />
+                            </div>
+                            <div className="flex-grow"></div>
                           </div>
-                          
-                          <div className="flex items-center justify-between border-b pb-3">
-                            <span className="text-lg font-medium">Required</span>
-                            <FormField control={fieldForm.control} name="required" render={({
-                          field
-                        }) => <div className="flex items-center space-x-2">
-                                  <Checkbox id="required" checked={field.value} onCheckedChange={field.onChange} />
-                                </div>} />
+                          <Button 
+                            disabled={fields.length === 1}
+                              type="button" 
+                              className='mr-8'
+                              variant="destructive" 
+                              onClick={() => removeField(field.id)}
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete Field
+                            </Button>
+                        </div>
+                        
+                        <div className="flex items-center justify-between pb-3 space-x-2">
+                          <div className="w-full">
+                            <Input className="w-full text-lg" placeholder="Field name" value={field.name} />
                           </div>
-                          
-                          <div className="flex items-center justify-between border-b pb-3">
-                            <FormField control={fieldForm.control} name="name" render={({
-                          field
-                        }) => <div className="w-full">
-                                  <Input className="w-full text-lg border-none bg-transparent focus-visible:ring-0 px-0" placeholder="Field name" {...field} />
-                                </div>} />
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="h-6 w-6 rounded-full border border-gray-400 flex items-center justify-center">
-                                    <Info className="h-4 w-4 text-gray-500" />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent className="bg-gray-800 text-white">
-                                  <p>Enter a descriptive name for this field</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="h-6 w-6 rounded-full flex items-center justify-center">
+                                  <Info className="h-4 w-4 text-gray-500" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-gray-800 text-white">
+                                <p>Enter a descriptive name for this field</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+                        
+                        <div className="flex items-center justify-between pb-3 space-x-2">
+                          <div className="w-full">
+                            <Input className="w-full text-lg" placeholder="Field placeholder" value={field.placeholder} />
                           </div>
-                          
-                          <div className="flex items-center justify-between">
-                            <FormField control={fieldForm.control} name="placeholder" render={({
-                          field
-                        }) => <div className="w-full">
-                                  <Input className="w-full text-lg border-none bg-transparent focus-visible:ring-0 px-0" placeholder="Field placeholder" {...field} />
-                                </div>} />
-                            <TooltipProvider>
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <div className="h-6 w-6 rounded-full border border-gray-400 flex items-center justify-center">
-                                    <Info className="h-4 w-4 text-gray-500" />
-                                  </div>
-                                </TooltipTrigger>
-                                <TooltipContent className="bg-gray-800 text-white">
-                                  <p>Text that will appear inside the empty field</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            </TooltipProvider>
-                          </div>
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="h-6 w-6 rounded-full flex items-center justify-center">
+                                  <Info className="h-4 w-4 text-gray-500" />
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent className="bg-gray-800 text-white">
+                                <p>Text that will appear inside the empty field</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
                         </div>
 
-                        <Button type="submit" className="w-full mt-6">
-                          <Plus className="mr-2 h-4 w-4" />
-                          Add Field
-                        </Button>
+                        {(field.type === 'dropdown' || field.type === 'checkbox') && (
+                          <div className="flex items-center justify-between pb-3 space-x-2">
+                            <div className="w-full">
+                              <Input 
+                                className="w-full text-lg" 
+                                placeholder="Comma separated values, e.g Cat,Dog..." 
+                                value={field.options || ''} 
+                                onChange={(e) => {
+                                  const updatedFields = fields.map(f => 
+                                    f.id === field.id 
+                                      ? { ...f, options: e.target.value }
+                                      : f
+                                  );
+                                  setFields(updatedFields);
+                                }}
+                              />
+                            </div>
+                            <TooltipProvider>
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <div className="h-6 w-6 rounded-full flex items-center justify-center">
+                                    <Info className="h-4 w-4 text-gray-500" />
+                                  </div>
+                                </TooltipTrigger>
+                                <TooltipContent className="bg-gray-800 text-white">
+                                  <p>Enter options separated by commas</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            </TooltipProvider>
+                          </div>
+                        )}
                       </CardContent>
                     </Card>
-                  </form>
-                </Form>
-              </CardContent>
-            </Card>
+                  ))}
+                </div>
 
-            {fields.length > 0 && <Card>
-                <CardHeader>
-                  <CardTitle className="text-xl">Form Fields ({fields.length})</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {fields.map((field, index) => <FieldCard key={field.id} field={field} index={index} onRemove={removeField} />)}
-                  </div>
-                </CardContent>
-              </Card>}
-            
-            {fields.length > 0 && <Button variant="default" className="w-full" onClick={onAddAnotherField}>
-                <Plus className="mr-2 h-4 w-4" />
-                Add Another Field
-              </Button>}
+            <Button
+              className="w-full mt-6"
+              onClick={addNewField}
+            >
+              <Plus className="mr-2 h-4 w-4" />
+              Add New Field
+            </Button>
+              </CardContent>
 
             <div className="flex justify-between">
               <Button variant="outline" onClick={() => setCurrentStep(1)}>
