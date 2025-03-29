@@ -85,6 +85,10 @@ const Dashboard = () => {
     }
   };
 
+  const handleCreateForm = () => {
+    navigate('/forms/create');
+  };
+
   useEffect(() => {
     if (!loading && organizations.length === 0 && user) {
       navigate('/organizations/create');
@@ -145,7 +149,7 @@ const Dashboard = () => {
               </div>
               
               <div className="mt-8 text-center">
-                <Button className="bg-blue-600 hover:bg-blue-700">
+                <Button className="bg-blue-600 hover:bg-blue-700" onClick={handleCreateForm}>
                   <Plus className="mr-2 h-4 w-4" /> Create Your First Form
                 </Button>
               </div>
@@ -157,7 +161,10 @@ const Dashboard = () => {
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-6">Dashboard Overview</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="cursor-pointer transition-colors duration-300 hover:bg-blue-50 hover:border-blue-200 group">
+            <Card 
+              className="cursor-pointer transition-colors duration-300 hover:bg-blue-50 hover:border-blue-200 group"
+              onClick={() => navigate('/forms/create')}
+            >
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium flex items-center">
                   Total Forms
