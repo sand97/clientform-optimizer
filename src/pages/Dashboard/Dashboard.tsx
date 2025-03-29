@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { BarChart, Users, FileText, Settings, Plus } from 'lucide-react';
+import UserMenu from '@/components/layout/UserMenu';
 
 interface Organization {
   id: string;
@@ -15,10 +16,11 @@ interface Organization {
 }
 
 const Dashboard = () => {
-  const { user, signOut } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
 
@@ -56,6 +58,11 @@ const Dashboard = () => {
         // Extract organizations from the joined query
         const orgs = data.map(item => item.organizations) as Organization[];
         setOrganizations(orgs);
+        
+        // Set first organization as current if we don't have one selected
+        if (orgs.length > 0 && !currentOrganization) {
+          setCurrentOrganization(orgs[0]);
+        }
       } catch (error: any) {
         toast({
           title: "Error fetching organizations",
@@ -68,20 +75,19 @@ const Dashboard = () => {
     };
 
     fetchOrganizations();
-  }, [user, toast]);
+  }, [user, toast, currentOrganization]);
 
   const handleCreateOrganization = () => {
     navigate('/organizations/create');
   };
 
   const handleSelectOrganization = (id: string) => {
-    // Will be implemented when we add organization-specific features
-    navigate(`/organizations/${id}`);
-  };
-
-  const handleLogout = async () => {
-    await signOut();
-    navigate('/');
+    const selected = organizations.find(org => org.id === id);
+    if (selected) {
+      setCurrentOrganization(selected);
+      // Will be implemented when we add organization-specific features
+      navigate(`/organizations/${id}`);
+    }
   };
 
   // If no organizations, redirect to create one
@@ -98,10 +104,14 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white shadow">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-bold text-gray-900">Welcome, {userName}</h1>
-            <Button variant="ghost" onClick={handleLogout}>Logout</Button>
+            <UserMenu 
+              userName={userName}
+              organizations={organizations}
+              currentOrganization={currentOrganization}
+              onSelectOrganization={handleSelectOrganization}
+            />
           </div>
         </div>
       </div>
@@ -179,7 +189,9 @@ const Dashboard = () => {
               {organizations.map((org) => (
                 <Card 
                   key={org.id} 
-                  className="cursor-pointer hover:shadow-md transition-shadow"
+                  className={`cursor-pointer hover:shadow-md transition-shadow ${
+                    currentOrganization?.id === org.id ? 'border-blue-500 ring-1 ring-blue-500' : ''
+                  }`}
                   onClick={() => handleSelectOrganization(org.id)}
                 >
                   <CardHeader className="pb-2">
