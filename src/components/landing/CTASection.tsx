@@ -17,7 +17,7 @@ const CTASection = () => {
                 Start your free trial
                 <ArrowRight className="ml-2 h-5 w-5" />
               </Button>
-              <Button size="lg" variant="outline" className="border-white px-8 py-6 text-lg text-blue-700 bg-slate-50">
+              <Button size="lg" variant="outline" className="border-white px-8 py-6 text-lg text-blue-600 bg-white">
                 Book a demo
               </Button>
             </div>
