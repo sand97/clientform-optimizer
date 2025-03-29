@@ -14,17 +14,34 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
+interface Field {
+  id: string;
+  name: string;
+  type: string;
+  required: boolean;
+  placeholder?: string;
+  options?: string;
+  order_position: number;
+}
+
+interface FormData {
+  id: string;
+  name: string;
+  description?: string;
+  fields: Field[];
+}
+
+interface TemplateData {
+  id: string;
+  pdf_url: string;
+  original_pdf_name: string;
+  positions: Record<string, any>;
+}
+
 interface Submission {
   id: string;
-  form_data: {
-    name: string;
-    fields: any[];
-  };
-  template_data: {
-    pdf_url: string;
-    original_pdf_name: string;
-    positions: Record<string, any>;
-  };
+  form_data: FormData;
+  template_data: TemplateData;
   field_values: Record<string, any>;
   created_at: string;
 }
@@ -43,7 +60,14 @@ export default function SubmissionsPage() {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as Submission[];
+      
+      // Parse the JSON strings into objects
+      return data.map(item => ({
+        ...item,
+        form_data: typeof item.form_data === 'string' ? JSON.parse(item.form_data) : item.form_data,
+        template_data: typeof item.template_data === 'string' ? JSON.parse(item.template_data) : item.template_data,
+        field_values: typeof item.field_values === 'string' ? JSON.parse(item.field_values) : item.field_values,
+      })) as Submission[];
     }
   });
 
