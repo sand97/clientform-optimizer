@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -116,29 +115,7 @@ const CreateOrganization = () => {
     <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
-          <div className="flex justify-between items-center">
-            <CardTitle className="text-2xl font-bold">Create Organization</CardTitle>
-            <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <AlertDialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Change Account
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    You will be logged out of your current account and redirected to the login page.
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          </div>
+          <CardTitle className="text-2xl font-bold">Create Organization</CardTitle>
           <CardDescription>Create your organization to collaborate with others</CardDescription>
         </CardHeader>
         <CardContent>
@@ -161,6 +138,26 @@ const CreateOrganization = () => {
                 <Plus size={18} />
                 {isLoading ? 'Creating...' : 'Create Organization'}
               </Button>
+              <AlertDialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <AlertDialogTrigger asChild>
+                  <Button variant="outline" className="w-full mt-2">
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Change Account
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Are you sure you want to logout?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      You will be logged out of your current account and redirected to the login page.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleLogout}>Logout</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </form>
           </Form>
         </CardContent>
