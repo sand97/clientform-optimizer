@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -15,19 +14,24 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 
+interface SubmissionTemplate {
+  original_pdf_name: string;
+  pdf_url: string;
+}
+
 interface Submission {
   id: string;
   form_data: FormData;
   template_data: TemplateData;
   field_values: Record<string, any>;
   created_at: string;
+  templates?: SubmissionTemplate;
 }
 
 export default function SubmissionsPage() {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  // Updated query to fetch submissions with template information
   const { data: submissions, isLoading, error } = useQuery({
     queryKey: ['submissions'],
     queryFn: async () => {
