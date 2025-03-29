@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { BarChart, Users, FileText, Settings, Plus, FormInput, FileCheck, Send } from 'lucide-react';
+import { BarChart, Users, FileText, Settings, Plus, FormInput, FileCheck, Send, ArrowRight } from 'lucide-react';
 import UserMenu from '@/components/layout/UserMenu';
 import OrganizationSelector from '@/components/layout/OrganizationSelector';
 
@@ -157,49 +157,69 @@ const Dashboard = () => {
         <div className="mb-8">
           <h2 className="text-xl font-semibold mb-6">Dashboard Overview</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card>
+            <Card className="cursor-pointer transition-colors duration-300 hover:bg-blue-50 hover:border-blue-200 group">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Total Forms</CardTitle>
-                <FileText className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium flex items-center">
+                  Total Forms
+                  <span className="ml-1 transform transition-transform duration-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1">
+                    <ArrowRight className="h-4 w-4 text-blue-600" />
+                  </span>
+                </CardTitle>
+                <FileText className="h-4 w-4 text-muted-foreground group-hover:text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">0</div>
+                <div className="text-2xl font-bold group-hover:text-blue-600">0</div>
                 <p className="text-xs text-muted-foreground">
                   Create your first form
                 </p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="cursor-pointer transition-colors duration-300 hover:bg-blue-50 hover:border-blue-200 group">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Submissions</CardTitle>
-                <BarChart className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium flex items-center">
+                  Submissions
+                  <span className="ml-1 transform transition-transform duration-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1">
+                    <ArrowRight className="h-4 w-4 text-blue-600" />
+                  </span>
+                </CardTitle>
+                <BarChart className="h-4 w-4 text-muted-foreground group-hover:text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">0</div>
+                <div className="text-2xl font-bold group-hover:text-blue-600">0</div>
                 <p className="text-xs text-muted-foreground">
                   No submissions yet
                 </p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="cursor-pointer transition-colors duration-300 hover:bg-blue-50 hover:border-blue-200 group">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Team Members</CardTitle>
-                <Users className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium flex items-center">
+                  Team Members
+                  <span className="ml-1 transform transition-transform duration-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1">
+                    <ArrowRight className="h-4 w-4 text-blue-600" />
+                  </span>
+                </CardTitle>
+                <Users className="h-4 w-4 text-muted-foreground group-hover:text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">1</div>
+                <div className="text-2xl font-bold group-hover:text-blue-600">1</div>
                 <p className="text-xs text-muted-foreground">
                   Just you for now
                 </p>
               </CardContent>
             </Card>
-            <Card>
+            <Card className="cursor-pointer transition-colors duration-300 hover:bg-blue-50 hover:border-blue-200 group">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
-                <CardTitle className="text-sm font-medium">Account Settings</CardTitle>
-                <Settings className="h-4 w-4 text-muted-foreground" />
+                <CardTitle className="text-sm font-medium flex items-center">
+                  Account Settings
+                  <span className="ml-1 transform transition-transform duration-300 opacity-0 group-hover:opacity-100 group-hover:translate-x-1">
+                    <ArrowRight className="h-4 w-4 text-blue-600" />
+                  </span>
+                </CardTitle>
+                <Settings className="h-4 w-4 text-muted-foreground group-hover:text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold">Manage</div>
+                <div className="text-2xl font-bold group-hover:text-blue-600">Manage</div>
                 <p className="text-xs text-muted-foreground">
                   Configure your account
                 </p>
