@@ -327,7 +327,9 @@ const Dashboard = () => {
                 </p>
               </CardContent>
             </Card>
-            <Card className="cursor-pointer transition-colors duration-300 hover:bg-blue-50 hover:border-blue-200 group">
+            <Card
+            onClick={() => navigate('/account/settings')}
+            className="cursor-pointer transition-colors duration-300 hover:bg-blue-50 hover:border-blue-200 group">
               <CardHeader className="flex flex-row items-center justify-between pb-2">
                 <CardTitle className="text-sm font-medium flex items-center">
                   Account Settings
