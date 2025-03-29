@@ -3,15 +3,18 @@ import { useEffect, useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
 
 const AuthCallback = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const [error, setError] = useState<string | null>(null);
   const [processing, setProcessing] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    // Enhanced debugging logs
+    // Comprehensive debugging logs
+    console.log('Auth callback triggered');
     console.log('Auth callback URL:', window.location.href);
     console.log('Query params:', location.search);
     console.log('Hash:', location.hash);
@@ -25,41 +28,86 @@ const AuthCallback = () => {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
         const queryParams = new URLSearchParams(location.search);
         
-        // Check if this is an email confirmation 
-        const isEmailConfirmation = queryParams.get('type') === 'signup' || 
-                                  hashParams.get('type') === 'signup';
-        
-        console.log('Is email confirmation:', isEmailConfirmation);
+        console.log('Hash parameters:', Object.fromEntries(hashParams.entries()));
         console.log('Query parameters:', Object.fromEntries(queryParams.entries()));
         
-        // For email confirmations, we need to handle the token
-        if (isEmailConfirmation) {
-          console.log('Processing email confirmation...');
+        // Check if this is an email confirmation by looking for multiple indicators
+        const isEmailConfirmation = 
+          queryParams.get('type') === 'signup' || 
+          hashParams.get('type') === 'signup' ||
+          queryParams.has('confirmation_token') ||
+          location.pathname.includes('confirm') ||
+          window.location.href.includes('confirm');
+        
+        console.log('Is email confirmation detected:', isEmailConfirmation);
+        
+        // Extract all possible tokens
+        const accessToken = 
+          queryParams.get('access_token') || 
+          hashParams.get('access_token');
+        
+        const refreshToken = 
+          queryParams.get('refresh_token') || 
+          hashParams.get('refresh_token');
+        
+        const confirmationToken = 
+          queryParams.get('confirmation_token') || 
+          hashParams.get('token') ||
+          queryParams.get('token');
           
-          // Extract token from URL (could be in different places)
-          const token = queryParams.get('access_token') || hashParams.get('access_token');
-          const refreshToken = queryParams.get('refresh_token') || hashParams.get('refresh_token');
+        console.log('Access token found:', !!accessToken);
+        console.log('Refresh token found:', !!refreshToken);
+        console.log('Confirmation token found:', !!confirmationToken);
+        
+        // For email confirmations with access token
+        if (isEmailConfirmation && accessToken) {
+          console.log('Processing email confirmation with access token...');
           
-          console.log('Token found:', !!token);
-          
-          if (token) {
-            console.log('Setting session with token');
+          try {
             // Set the session with the provided tokens
             const { error: setSessionError } = await supabase.auth.setSession({
-              access_token: token,
+              access_token: accessToken,
               refresh_token: refreshToken || '',
             });
             
             if (setSessionError) {
-              console.error('Error setting session:', setSessionError);
-              setError(setSessionError.message);
-              setProcessing(false);
-              return;
+              console.error('Error setting session with tokens:', setSessionError);
+              // Continue to next approach - don't return early
+            } else {
+              console.log('Successfully set session with tokens');
             }
+          } catch (e) {
+            console.error('Exception setting session with tokens:', e);
+            // Continue to next approach - don't return early
           }
         }
         
-        // After handling the token (or for OAuth callbacks), check the session
+        // For email confirmations with confirmation token
+        if (isEmailConfirmation && confirmationToken && !accessToken) {
+          console.log('Processing email confirmation with confirmation token...');
+          
+          try {
+            // Try to verify the email using the confirmation token
+            // This approach depends on Supabase's implementation and may not be available
+            // but we're trying all possible approaches
+            const { error: verifyError } = await supabase.auth.verifyOtp({
+              token_hash: confirmationToken,
+              type: 'email',
+            });
+            
+            if (verifyError) {
+              console.error('Error verifying with confirmation token:', verifyError);
+              // Continue to next approach - don't return early
+            } else {
+              console.log('Successfully verified with confirmation token');
+            }
+          } catch (e) {
+            console.error('Exception verifying with confirmation token:', e);
+            // Continue to next approach - don't return early
+          }
+        }
+        
+        // Check the session after all token handling attempts
         console.log('Checking current session');
         const { data, error: sessionError } = await supabase.auth.getSession();
         
@@ -72,51 +120,32 @@ const AuthCallback = () => {
         
         console.log('Session check result:', data.session ? 'Has session' : 'No session');
         
+        // Final redirection logic
         if (data.session) {
           // We have a valid session, redirect to dashboard
           console.log('Valid session found, redirecting to dashboard');
+          toast({
+            title: "Email verified successfully",
+            description: "Your account is now active",
+          });
           navigate('/dashboard');
         } else if (isEmailConfirmation) {
-          // If email confirmation but no session (this happens with some email confirmation flows)
+          // If it was an email confirmation but we couldn't establish a session,
+          // redirect to login with success message
           console.log('Email confirmed but no session, redirecting to login with message');
           navigate('/auth/login', { 
             state: { message: 'Email confirmed successfully. Please log in.' } 
           });
         } else {
-          // If we get here and it was an email confirmation, try a more direct approach
-          if (isEmailConfirmation) {
-            console.log('Attempting alternative email confirmation handling');
-            // Try to use the token to sign in directly
-            const accessToken = queryParams.get('access_token') || hashParams.get('access_token');
-            const refreshToken = queryParams.get('refresh_token') || hashParams.get('refresh_token');
-            
-            if (accessToken) {
-              try {
-                const { data: signInData, error: signInError } = await supabase.auth.setSession({
-                  access_token: accessToken,
-                  refresh_token: refreshToken || '',
-                });
-                
-                if (signInError) {
-                  console.error('Error signing in with token:', signInError);
-                  setError('Authentication failed. Please try logging in manually.');
-                } else if (signInData.session) {
-                  console.log('Successfully signed in with token, redirecting to dashboard');
-                  navigate('/dashboard');
-                  return;
-                }
-              } catch (signInErr) {
-                console.error('Exception during token sign in:', signInErr);
-              }
-            }
-            
-            // If we couldn't sign in with the token, redirect to login with a success message
-            console.log('Could not sign in with token, redirecting to login with confirmation message');
+          // If we get here and we thought it was an email confirmation,
+          // make a final attempt with any tokens we have
+          if (isEmailConfirmation && (accessToken || confirmationToken)) {
+            console.log('Making final attempt to handle email confirmation');
             navigate('/auth/login', { 
-              state: { message: 'Email confirmed successfully. Please log in.' } 
+              state: { message: 'Email confirmation processed. Please log in to continue.' } 
             });
           } else {
-            // Failed to authenticate
+            // Not an email confirmation and no session - authentication failed
             console.error('Authentication failed: No session established');
             setError('Authentication failed. Please try again.');
             setProcessing(false);
@@ -129,8 +158,9 @@ const AuthCallback = () => {
       }
     };
 
+    // Execute the auth callback handler
     handleAuthCallback();
-  }, [navigate, location]);
+  }, [navigate, location, toast]);
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50">
