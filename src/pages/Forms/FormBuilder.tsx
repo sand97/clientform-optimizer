@@ -1,9 +1,10 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ArrowLeft, Plus, Trash2, Save, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Plus, Save, ArrowRight } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Button } from '@/components/ui/button';
@@ -29,6 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import FieldCard from '@/components/forms/FieldCard';
+import { FIELD_TYPES } from '@/constants/formFields';
+import { Field, Organization } from '@/types/forms';
 
 const formSchema = z.object({
   name: z.string().min(3, {
@@ -52,31 +56,6 @@ const fieldSchema = z.object({
 type FormValues = z.infer<typeof formSchema>;
 type FieldValues = z.infer<typeof fieldSchema>;
 
-interface Field {
-  id: string;
-  name: string;
-  type: string;
-  required: boolean;
-  placeholder?: string;
-  options?: any;
-  order_position: number;
-}
-
-interface Organization {
-  id: string;
-  name: string;
-}
-
-const FIELD_TYPES = [
-  { value: 'text', label: 'Text' },
-  { value: 'email', label: 'Email' },
-  { value: 'number', label: 'Number' },
-  { value: 'date', label: 'Date' },
-  { value: 'textarea', label: 'Text Area' },
-  { value: 'checkbox', label: 'Checkbox' },
-  { value: 'select', label: 'Dropdown' },
-];
-
 const FormBuilder = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -88,6 +67,7 @@ const FormBuilder = () => {
   const [fields, setFields] = useState<Field[]>([]);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
+  const [hasEmptyNames, setHasEmptyNames] = useState(false);
   
   const currentOrgId = location.state?.currentOrganizationId || '';
 
@@ -149,6 +129,11 @@ const FormBuilder = () => {
     fetchOrganizations();
   }, [user, toast, form, currentOrgId]);
 
+  // Check for empty name fields
+  useEffect(() => {
+    setHasEmptyNames(fields.some(field => !field.name.trim()));
+  }, [fields]);
+
   const onSubmitFormDetails = async (values: FormValues) => {
     setFormData(values);
     setCurrentStep(2);
@@ -191,6 +176,15 @@ const FormBuilder = () => {
       toast({
         title: "No fields added",
         description: "Please add at least one field to your form.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (hasEmptyNames) {
+      toast({
+        title: "Incomplete fields",
+        description: "Please ensure all fields have a name before saving.",
         variant: "destructive",
       });
       return;
@@ -353,88 +347,92 @@ const FormBuilder = () => {
               <CardContent>
                 <Form {...fieldForm}>
                   <form onSubmit={fieldForm.handleSubmit(addField)} className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={fieldForm.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Field Name</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g., Full Name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                    <Card className="border-dashed border-2 bg-white">
+                      <CardContent className="p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                            control={fieldForm.control}
+                            name="name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Field Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., Full Name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
 
-                      <FormField
-                        control={fieldForm.control}
-                        name="type"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Field Type</FormLabel>
-                            <Select 
-                              onValueChange={field.onChange} 
-                              defaultValue={field.value}
-                            >
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select a field type" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {FIELD_TYPES.map((type) => (
-                                  <SelectItem key={type.value} value={type.value}>
-                                    {type.label}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                          <FormField
+                            control={fieldForm.control}
+                            name="type"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Field Type</FormLabel>
+                                <Select 
+                                  onValueChange={field.onChange} 
+                                  defaultValue={field.value}
+                                >
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select a field type" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {FIELD_TYPES.map((type) => (
+                                      <SelectItem key={type.value} value={type.value}>
+                                        {type.label}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={fieldForm.control}
-                        name="placeholder"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Placeholder (Optional)</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g., Enter your full name" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                          <FormField
+                            control={fieldForm.control}
+                            name="placeholder"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Placeholder (Optional)</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., Enter your full name" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
 
-                      <FormField
-                        control={fieldForm.control}
-                        name="required"
-                        render={({ field }) => (
-                          <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4">
-                            <FormControl>
-                              <Checkbox
-                                checked={field.value}
-                                onCheckedChange={field.onChange}
-                              />
-                            </FormControl>
-                            <div className="space-y-1 leading-none">
-                              <FormLabel>Required Field</FormLabel>
-                            </div>
-                          </FormItem>
-                        )}
-                      />
-                    </div>
+                          <FormField
+                            control={fieldForm.control}
+                            name="required"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-row items-start space-x-3 space-y-0 p-4 bg-gray-50 rounded-md h-full">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel>Required Field</FormLabel>
+                                </div>
+                              </FormItem>
+                            )}
+                          />
+                        </div>
 
-                    <Button type="submit" variant="outline" className="w-full">
-                      <Plus className="mr-2 h-4 w-4" />
-                      Add Field
-                    </Button>
+                        <Button type="submit" className="w-full mt-4">
+                          <Plus className="mr-2 h-4 w-4" />
+                          Add Field
+                        </Button>
+                      </CardContent>
+                    </Card>
                   </form>
                 </Form>
               </CardContent>
@@ -446,28 +444,14 @@ const FormBuilder = () => {
                   <CardTitle className="text-xl">Form Fields ({fields.length})</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {fields.map((field, index) => (
-                      <div 
-                        key={field.id} 
-                        className="flex items-center justify-between p-3 bg-white border rounded-md"
-                      >
-                        <div className="flex-1">
-                          <div className="font-medium">{field.name}</div>
-                          <div className="text-sm text-gray-500">
-                            Type: {FIELD_TYPES.find(t => t.value === field.type)?.label || field.type}
-                            {field.required && ' • Required'}
-                          </div>
-                        </div>
-                        <Button 
-                          variant="ghost" 
-                          size="sm" 
-                          onClick={() => removeField(field.id)}
-                          className="text-gray-500 hover:text-red-500"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+                      <FieldCard 
+                        key={field.id}
+                        field={field}
+                        index={index}
+                        onRemove={removeField}
+                      />
                     ))}
                   </div>
                 </CardContent>
@@ -484,7 +468,7 @@ const FormBuilder = () => {
               </Button>
               <Button 
                 onClick={saveForm} 
-                disabled={isSubmitting || fields.length === 0}
+                disabled={isSubmitting || fields.length === 0 || hasEmptyNames}
               >
                 {isSubmitting ? "Saving..." : "Save Form"}
                 <Save className="ml-2 h-4 w-4" />
