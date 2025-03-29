@@ -12,35 +12,6 @@ import { Label } from '@/components/ui/label';
 import { Logo } from '@/components/Logo';
 import SubmissionSuccess from '@/components/templates/SubmissionSuccess';
 
-interface Field {
-  id: string;
-  name: string;
-  type: string;
-  required: boolean;
-  placeholder?: string;
-  options?: string;
-  order_position: number;
-}
-
-interface Template {
-  id: string;
-  form_id: string;
-  pdf_url: string;
-  positions: Array<{
-    x: number;
-    y: number;
-    page: number;
-    fieldId: string;
-  }>;
-  form: {
-    id: string;
-    name: string;
-    description?: string;
-    organization_id: string;
-    fields: Field[];
-  };
-}
-
 export default function SubmitTemplate() {
   const { templateId } = useParams();
   const { toast } = useToast();
@@ -91,7 +62,7 @@ export default function SubmitTemplate() {
             ...templateData.form,
             fields: fieldsData.map((field: any) => ({
               ...field,
-              options: field.options || ''
+              options: field.options ? String(field.options) : ''
             }))
           }
         };

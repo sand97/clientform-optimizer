@@ -1,11 +1,10 @@
-
 export interface Field {
   id: string;
   name: string;
   type: string;
   required: boolean;
   placeholder?: string;
-  options?: any;
+  options?: string;
   order_position: number;
 }
 

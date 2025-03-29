@@ -156,17 +156,28 @@ const Dashboard = () => {
 
       try {
         const { data: membersData, error: membersError } = await supabase
-          .from('organization_members')
+          .from('organization_members_with_users')
           .select('*')
           .eq('organization_id', currentOrganization?.id);
 
         if (membersError) throw membersError;
 
-        setMembers(membersData || []);
+        const transformedMembers: TeamMember[] = membersData.map(member => ({
+          id: member.id || '',
+          organization_id: member.organization_id || '',
+          user_id: member.user_id || '',
+          role: member.role || '',
+          created_at: member.created_at || '',
+          email: member.email || '',
+          raw_user_meta_data: member.raw_user_meta_data
+        }));
+
+        setMembers(transformedMembers);
+
       } catch (error) {
-        console.error('Error fetching members:', error);
+        console.error('Error loading members:', error);
         toast({
-          title: "Error fetching members",
+          title: "Error",
           description: "Failed to load team members",
           variant: "destructive",
         });
