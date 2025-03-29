@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Facebook, Twitter, Linkedin, Mail, Phone } from 'lucide-react';
 
@@ -29,41 +30,74 @@ const Footer = () => {
             
             <div>
               <h3 className="text-white font-semibold mb-4">Product</h3>
-              <ul className="space-y-3">
-                {["Features", "How It Works", "Pricing", "Enterprise", "Security"].map((item, i) => (
-                  <li key={i}>
-                    <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
-                      {item}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+              <div className="grid grid-cols-2 gap-2">
+                <ul className="space-y-3">
+                  {["Features", "How It Works", "Pricing"].map((item, i) => (
+                    <li key={i}>
+                      <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
+                        {item}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <ul className="space-y-3">
+                  {["Enterprise", "Security", "Updates"].map((item, i) => (
+                    <li key={i}>
+                      <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
+                        {item}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
             
             <div>
               <h3 className="text-white font-semibold mb-4">Resources</h3>
-              <ul className="space-y-3">
-                {["Documentation", "Guides", "API Reference", "Blog", "Support"].map((item, i) => (
-                  <li key={i}>
-                    <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
-                      {item}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+              <div className="grid grid-cols-2 gap-2">
+                <ul className="space-y-3">
+                  {["Documentation", "Guides", "API Reference"].map((item, i) => (
+                    <li key={i}>
+                      <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
+                        {item}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <ul className="space-y-3">
+                  {["Blog", "Support", "Training"].map((item, i) => (
+                    <li key={i}>
+                      <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
+                        {item}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
             
             <div>
               <h3 className="text-white font-semibold mb-4">Company</h3>
-              <ul className="space-y-3">
-                {["About Us", "Careers", "Contact", "Privacy Policy", "Terms of Service"].map((item, i) => (
-                  <li key={i}>
-                    <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
-                      {item}
-                    </a>
-                  </li>
-                ))}
-              </ul>
+              <div className="grid grid-cols-2 gap-2">
+                <ul className="space-y-3">
+                  {["About Us", "Careers", "Contact"].map((item, i) => (
+                    <li key={i}>
+                      <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
+                        {item}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+                <ul className="space-y-3">
+                  {["Privacy Policy", "Terms of Service", "Legal"].map((item, i) => (
+                    <li key={i}>
+                      <a href="#" className="text-gray-400 hover:text-blue-400 transition-colors">
+                        {item}
+                      </a>
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           </div>
           
