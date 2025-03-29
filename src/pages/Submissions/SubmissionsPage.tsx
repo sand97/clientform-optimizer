@@ -3,9 +3,10 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
-import { Download, Eye } from 'lucide-react';
+import { ArrowLeft, Download, Eye } from 'lucide-react';
 import { PDFDocument } from 'pdf-lib';
 import { FormData, TemplateData, Field } from '@/types/forms';
+import { useNavigate } from 'react-router-dom';
 
 // UI Components
 import { PageHeader } from '@/components/ui/page-header';
@@ -31,6 +32,7 @@ interface Submission {
 }
 
 export default function SubmissionsPage() {
+  const navigate = useNavigate();
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
@@ -133,6 +135,11 @@ export default function SubmissionsPage() {
 
   return (
     <div className="container mx-auto py-10">
+      <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-6">
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back to Dashboard
+      </Button>
+      
       <PageHeader heading="Submissions" text="View and manage form submissions" />
 
       <Card className="mt-6">
