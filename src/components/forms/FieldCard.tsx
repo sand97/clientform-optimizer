@@ -16,7 +16,7 @@ const FieldCard = ({ field, onRemove, index }: FieldCardProps) => {
   const fieldTypeLabel = FIELD_TYPES.find(t => t.value === field.type)?.label || field.type;
   
   return (
-    <Card className="bg-white border rounded-xl overflow-hidden shadow-sm">
+    <Card className="bg-white border rounded-xl overflow-hidden shadow-sm relative">
       {/* Field Type Row */}
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center space-x-2">
@@ -81,15 +81,15 @@ const FieldCard = ({ field, onRemove, index }: FieldCardProps) => {
         </TooltipProvider>
       </div>
       
-      {/* Delete Button - Hidden and Accessible via Context Menu */}
+      {/* Delete Button */}
       <Button
-        variant="ghost"
+        variant="destructive"
         size="sm"
         onClick={() => onRemove(field.id)}
-        className="absolute top-2 right-2 text-gray-500 hover:text-red-500 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-opacity"
+        className="absolute top-0 right-0 m-2"
       >
         <Trash2 className="h-4 w-4" />
-        <span className="sr-only">Remove field</span>
+        <span className="sr-only">Delete field</span>
       </Button>
     </Card>
   );
