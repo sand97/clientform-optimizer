@@ -6,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { BarChart, Users, FileText, Settings, Plus, FormInput, FileCheck, Send, ArrowRight } from 'lucide-react';
+import { BarChart, Users, FileText, Settings, Plus, FormInput, FileCheck, Send, ArrowRight, Edit, Eye } from 'lucide-react';
 import UserMenu from '@/components/layout/UserMenu';
 import OrganizationSelector from '@/components/layout/OrganizationSelector';
 
@@ -16,12 +16,22 @@ interface Organization {
   created_at: string;
 }
 
+interface Form {
+  id: string;
+  name: string;
+  description: string | null;
+  created_at: string;
+  organization_id: string | null;
+  organization_name?: string;
+}
+
 const Dashboard = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
+  const [forms, setForms] = useState<Form[]>([]);
   const [loading, setLoading] = useState(true);
   const [userName, setUserName] = useState('');
 
@@ -73,6 +83,56 @@ const Dashboard = () => {
     fetchOrganizations();
   }, [user, toast, currentOrganization]);
 
+  useEffect(() => {
+    const fetchForms = async () => {
+      if (!user) return;
+
+      try {
+        // Fetch user's personal forms (where organization_id is null)
+        const { data: personalForms, error: personalFormsError } = await supabase
+          .from('forms')
+          .select('id, name, description, created_at, organization_id')
+          .eq('user_id', user.id)
+          .is('organization_id', null)
+          .order('created_at', { ascending: false });
+
+        if (personalFormsError) throw personalFormsError;
+
+        // Fetch forms from organizations the user belongs to
+        const { data: orgForms, error: orgFormsError } = await supabase
+          .from('forms')
+          .select(`
+            id, 
+            name, 
+            description, 
+            created_at, 
+            organization_id,
+            organizations:organization_id(name)
+          `)
+          .not('organization_id', 'is', null)
+          .order('created_at', { ascending: false });
+
+        if (orgFormsError) throw orgFormsError;
+
+        const organizationForms = orgForms.map(form => ({
+          ...form,
+          organization_name: form.organizations?.name
+        }));
+
+        const allForms = [...personalForms, ...organizationForms];
+        setForms(allForms);
+      } catch (error: any) {
+        toast({
+          title: "Error fetching forms",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    };
+
+    fetchForms();
+  }, [user, toast]);
+
   const handleCreateOrganization = () => {
     navigate('/organizations/create');
   };
@@ -87,6 +147,10 @@ const Dashboard = () => {
 
   const handleCreateForm = () => {
     navigate('/forms/create');
+  };
+
+  const handleViewForm = (id: string) => {
+    navigate(`/forms/${id}`);
   };
 
   useEffect(() => {
@@ -175,9 +239,9 @@ const Dashboard = () => {
                 <FileText className="h-4 w-4 text-muted-foreground group-hover:text-blue-600" />
               </CardHeader>
               <CardContent>
-                <div className="text-2xl font-bold group-hover:text-blue-600">0</div>
+                <div className="text-2xl font-bold group-hover:text-blue-600">{forms.length}</div>
                 <p className="text-xs text-muted-foreground">
-                  Create your first form
+                  {forms.length === 0 ? "Create your first form" : "Forms created"}
                 </p>
               </CardContent>
             </Card>
@@ -234,6 +298,53 @@ const Dashboard = () => {
             </Card>
           </div>
         </div>
+
+        {/* Forms Section */}
+        {forms.length > 0 && (
+          <div className="mb-8">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-semibold">Your Forms</h2>
+              <Button onClick={handleCreateForm} size="sm">
+                <Plus className="mr-2 h-4 w-4" /> New Form
+              </Button>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {forms.map((form) => (
+                <Card key={form.id} className="overflow-hidden hover:border-blue-200 transition-colors">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">{form.name}</CardTitle>
+                    {form.organization_name && (
+                      <p className="text-xs text-blue-600 font-medium">
+                        {form.organization_name}
+                      </p>
+                    )}
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-500 mb-4 line-clamp-2">{form.description || "No description"}</p>
+                    <div className="flex justify-end space-x-2">
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-gray-500"
+                        onClick={() => handleViewForm(form.id)}
+                      >
+                        <Eye className="h-4 w-4 mr-1" /> View
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-gray-500"
+                        onClick={() => navigate(`/forms/${form.id}`)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" /> Edit
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

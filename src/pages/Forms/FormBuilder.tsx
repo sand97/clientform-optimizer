@@ -1,5 +1,5 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -37,6 +37,7 @@ const formSchema = z.object({
     message: "Form name must be at least 3 characters long",
   }),
   description: z.string().optional(),
+  organization_id: z.string().optional(),
 });
 
 // Field schema with validation
@@ -65,6 +66,11 @@ interface Field {
   order_position: number;
 }
 
+interface Organization {
+  id: string;
+  name: string;
+}
+
 const FIELD_TYPES = [
   { value: 'text', label: 'Text' },
   { value: 'email', label: 'Email' },
@@ -83,12 +89,8 @@ const FormBuilder = () => {
   const [currentStep, setCurrentStep] = useState(1);
   const [formData, setFormData] = useState<FormValues | null>(null);
   const [fields, setFields] = useState<Field[]>([]);
-  const [currentField, setCurrentField] = useState<FieldValues>({
-    name: '',
-    type: 'text',
-    required: false,
-    placeholder: '',
-  });
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [loading, setLoading] = useState(true);
 
   // Initialize form with react-hook-form
   const form = useForm<FormValues>({
@@ -96,6 +98,7 @@ const FormBuilder = () => {
     defaultValues: {
       name: '',
       description: '',
+      organization_id: '',
     },
   });
 
@@ -108,6 +111,42 @@ const FormBuilder = () => {
       placeholder: '',
     },
   });
+
+  // Fetch organizations when component mounts
+  useEffect(() => {
+    const fetchOrganizations = async () => {
+      if (!user) return;
+
+      try {
+        const { data, error } = await supabase
+          .from('organization_members')
+          .select(`
+            organization_id,
+            organizations:organization_id(id, name)
+          `)
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        const orgs = data.map(item => ({
+          id: item.organizations.id,
+          name: item.organizations.name
+        }));
+        
+        setOrganizations(orgs);
+      } catch (error: any) {
+        toast({
+          title: "Error fetching organizations",
+          description: error.message,
+          variant: "destructive",
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchOrganizations();
+  }, [user, toast]);
 
   const onSubmitFormDetails = async (values: FormValues) => {
     setFormData(values);
@@ -167,6 +206,7 @@ const FormBuilder = () => {
           name: formData.name,
           description: formData.description || '',
           user_id: user.id,
+          organization_id: formData.organization_id || null,
         })
         .select('id')
         .single();
@@ -260,6 +300,37 @@ const FormBuilder = () => {
                       </FormItem>
                     )}
                   />
+
+                  {organizations.length > 0 && (
+                    <FormField
+                      control={form.control}
+                      name="organization_id"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Organization (Optional)</FormLabel>
+                          <Select 
+                            onValueChange={field.onChange} 
+                            defaultValue={field.value}
+                          >
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select an organization" />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="">Personal Form</SelectItem>
+                              {organizations.map((org) => (
+                                <SelectItem key={org.id} value={org.id}>
+                                  {org.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  )}
 
                   <Separator />
 

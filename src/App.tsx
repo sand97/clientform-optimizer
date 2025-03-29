@@ -17,6 +17,7 @@ import AuthCallback from "./pages/Auth/AuthCallback";
 import Dashboard from "./pages/Dashboard/Dashboard";
 import CreateOrganization from "./pages/Organizations/CreateOrganization";
 import FormBuilder from "./pages/Forms/FormBuilder";
+import FormView from "./pages/Forms/FormView";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -48,7 +49,8 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/organizations/create" element={<CreateOrganization />} />
               <Route path="/forms/create" element={<FormBuilder />} />
-              <Route path="/forms/:id" element={<FormBuilder />} />
+              <Route path="/forms/:id/edit" element={<FormBuilder />} />
+              <Route path="/forms/:id" element={<FormView />} />
             </Route>
             
             {/* Catch-all route */}
