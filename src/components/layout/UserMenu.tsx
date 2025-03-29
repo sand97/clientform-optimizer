@@ -25,23 +25,26 @@ const UserMenu = ({ userName }: UserMenuProps) => {
   };
 
   const handleContactUs = () => {
-    // This could be updated to open a contact form or navigate to a contact page
     window.open('mailto:support@formfiller.com', '_blank');
+  };
+
+  const handleAccountSettings = () => {
+    navigate('/account/settings');
   };
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="flex items-center gap-2">
-          <User className="h-4 w-4" />
-          <span className="max-w-[100px] truncate hidden sm:inline">
-            {userName || 'Account'}
+          <User className="h-4 w-4 opacity-50" />
+          <span className="truncate">
+            {userName}
           </span>
           <ChevronDown className="h-4 w-4 opacity-50" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/account/settings')}>
+        <DropdownMenuItem className="cursor-pointer" onClick={handleAccountSettings}>
           <Settings className="mr-2 h-4 w-4" />
           Account Settings
         </DropdownMenuItem>

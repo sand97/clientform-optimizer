@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,7 +6,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { BarChart, Users, FileText, Settings, Plus } from 'lucide-react';
+import { BarChart, Users, FileText, Settings, Plus, FormInput, FileCheck, Send } from 'lucide-react';
 import UserMenu from '@/components/layout/UserMenu';
 import OrganizationSelector from '@/components/layout/OrganizationSelector';
 
@@ -166,60 +167,43 @@ const Dashboard = () => {
         </div>
 
         <div className="mb-8">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Your Organizations</h2>
-            <Button onClick={handleCreateOrganization} size="sm">
-              <Plus className="mr-1 h-4 w-4" /> Create Organization
-            </Button>
-          </div>
-
-          {loading ? (
-            <div className="text-center py-8">
-              <div className="animate-spin h-8 w-8 border-4 border-t-blue-500 border-gray-200 rounded-full mx-auto"></div>
-              <p className="mt-4 text-gray-600">Loading your organizations...</p>
-            </div>
-          ) : organizations.length > 0 ? (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {organizations.map((org) => (
-                <Card 
-                  key={org.id} 
-                  className={`cursor-pointer hover:shadow-md transition-shadow ${
-                    currentOrganization?.id === org.id ? 'border-blue-500 ring-1 ring-blue-500' : ''
-                  }`}
-                  onClick={() => handleSelectOrganization(org.id)}
-                >
-                  <CardHeader className="pb-2">
-                    <CardTitle>{org.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-gray-500">
-                      Created: {new Date(org.created_at).toLocaleDateString()}
-                    </p>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          ) : (
-            <Card className="bg-gray-50 border border-dashed border-gray-200">
-              <CardContent className="py-8">
-                <div className="text-center">
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-blue-100">
-                    <Plus className="h-6 w-6 text-blue-600" />
+          <Card className="bg-blue-50 border border-blue-100">
+            <CardContent className="p-6">
+              <h3 className="text-xl font-semibold mb-4">Get Started with FormFiller</h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-6">
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                    <FormInput className="h-6 w-6 text-blue-600" />
                   </div>
-                  <h3 className="mt-4 text-lg font-medium">No organizations yet</h3>
-                  <p className="mt-2 text-sm text-gray-500">
-                    Create your first organization to start building forms
-                  </p>
-                  <Button 
-                    className="mt-4" 
-                    onClick={handleCreateOrganization}
-                  >
-                    Create Organization
-                  </Button>
+                  <h4 className="font-medium text-lg mb-2">1. Create Form</h4>
+                  <p className="text-gray-600 text-sm">Design a user-friendly web form that captures all the information needed for your document.</p>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+                
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                    <FileCheck className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h4 className="font-medium text-lg mb-2">2. Configure Template</h4>
+                  <p className="text-gray-600 text-sm">Upload your existing PDF or document template that needs to be filled with client information.</p>
+                </div>
+                
+                <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-100">
+                  <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                    <Send className="h-6 w-6 text-blue-600" />
+                  </div>
+                  <h4 className="font-medium text-lg mb-2">3. Share Link</h4>
+                  <p className="text-gray-600 text-sm">Send your clients a link to fill out the form on any device with real-time validation.</p>
+                </div>
+              </div>
+              
+              <div className="mt-8 text-center">
+                <Button className="bg-blue-600 hover:bg-blue-700">
+                  <Plus className="mr-2 h-4 w-4" /> Create Your First Form
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </div>
