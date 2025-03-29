@@ -11,7 +11,7 @@ const AuthCallback = () => {
   const [processing, setProcessing] = useState(true);
 
   useEffect(() => {
-    // Log the URL for debugging
+    // Enhanced debugging logs
     console.log('Auth callback URL:', window.location.href);
     console.log('Query params:', location.search);
     console.log('Hash:', location.hash);
@@ -29,8 +29,8 @@ const AuthCallback = () => {
         const isEmailConfirmation = queryParams.get('type') === 'signup' || 
                                   hashParams.get('type') === 'signup';
         
-        // Log confirmation type for debugging
         console.log('Is email confirmation:', isEmailConfirmation);
+        console.log('Query parameters:', Object.fromEntries(queryParams.entries()));
         
         // For email confirmations, we need to handle the token
         if (isEmailConfirmation) {
@@ -61,11 +61,11 @@ const AuthCallback = () => {
         
         // After handling the token (or for OAuth callbacks), check the session
         console.log('Checking current session');
-        const { data, error } = await supabase.auth.getSession();
+        const { data, error: sessionError } = await supabase.auth.getSession();
         
-        if (error) {
-          console.error('Error getting session:', error);
-          setError(error.message);
+        if (sessionError) {
+          console.error('Error getting session:', sessionError);
+          setError(sessionError.message);
           setProcessing(false);
           return;
         }
@@ -77,16 +77,50 @@ const AuthCallback = () => {
           console.log('Valid session found, redirecting to dashboard');
           navigate('/dashboard');
         } else if (isEmailConfirmation) {
-          // If email confirmation but no session, redirect to login with success message
-          console.log('Email confirmed but no session, redirecting to login');
+          // If email confirmation but no session (this happens with some email confirmation flows)
+          console.log('Email confirmed but no session, redirecting to login with message');
           navigate('/auth/login', { 
             state: { message: 'Email confirmed successfully. Please log in.' } 
           });
         } else {
-          // Failed to authenticate
-          console.error('Authentication failed: No session established');
-          setError('Authentication failed. Please try again.');
-          setProcessing(false);
+          // If we get here and it was an email confirmation, try a more direct approach
+          if (isEmailConfirmation) {
+            console.log('Attempting alternative email confirmation handling');
+            // Try to use the token to sign in directly
+            const accessToken = queryParams.get('access_token') || hashParams.get('access_token');
+            const refreshToken = queryParams.get('refresh_token') || hashParams.get('refresh_token');
+            
+            if (accessToken) {
+              try {
+                const { data: signInData, error: signInError } = await supabase.auth.setSession({
+                  access_token: accessToken,
+                  refresh_token: refreshToken || '',
+                });
+                
+                if (signInError) {
+                  console.error('Error signing in with token:', signInError);
+                  setError('Authentication failed. Please try logging in manually.');
+                } else if (signInData.session) {
+                  console.log('Successfully signed in with token, redirecting to dashboard');
+                  navigate('/dashboard');
+                  return;
+                }
+              } catch (signInErr) {
+                console.error('Exception during token sign in:', signInErr);
+              }
+            }
+            
+            // If we couldn't sign in with the token, redirect to login with a success message
+            console.log('Could not sign in with token, redirecting to login with confirmation message');
+            navigate('/auth/login', { 
+              state: { message: 'Email confirmed successfully. Please log in.' } 
+            });
+          } else {
+            // Failed to authenticate
+            console.error('Authentication failed: No session established');
+            setError('Authentication failed. Please try again.');
+            setProcessing(false);
+          }
         }
       } catch (err) {
         console.error('Unexpected error during auth callback:', err);
