@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ArrowLeft, Plus, Save, ArrowRight, Info } from 'lucide-react';
+import { ArrowLeft, Plus, Save, ArrowRight, Info, Trash2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Button } from '@/components/ui/button';
@@ -243,6 +243,25 @@ const FormBuilder = () => {
       });
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const onDeleteField = () => {
+    if (fields.length > 0) {
+      const updatedFields = [...fields];
+      updatedFields.pop();
+      setFields(updatedFields);
+      
+      toast({
+        title: "Field deleted",
+        description: "The last field has been removed from your form.",
+      });
+    } else {
+      toast({
+        title: "No fields to delete",
+        description: "There are no fields to delete.",
+        variant: "destructive",
+      });
     }
   };
 
@@ -488,17 +507,12 @@ const FormBuilder = () => {
             )}
             
             <Button 
-              variant="default"
+              variant="destructive"
               className="w-full"
-              onClick={() => {
-                const element = document.querySelector('form button[type="submit"]');
-                if (element) {
-                  element.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                }
-              }}
+              onClick={onDeleteField}
             >
-              <Plus className="mr-2 h-4 w-4" />
-              Add Another Field
+              <Trash2 className="mr-2 h-4 w-4" />
+              Delete Field
             </Button>
 
             <div className="flex justify-between">
