@@ -36,8 +36,11 @@ const AuthCallback = () => {
           queryParams.get('type') === 'signup' || 
           hashParams.get('type') === 'signup' ||
           queryParams.has('confirmation_token') ||
+          queryParams.has('token') ||
           location.pathname.includes('confirm') ||
-          window.location.href.includes('confirm');
+          location.pathname.includes('verify') ||
+          window.location.href.includes('confirm') ||
+          window.location.href.includes('verify');
         
         console.log('Is email confirmation detected:', isEmailConfirmation);
         
@@ -107,6 +110,19 @@ const AuthCallback = () => {
           }
         }
         
+        // Manual session refresh to ensure we have the latest state
+        console.log('Manually refreshing session...');
+        try {
+          const { error: refreshError } = await supabase.auth.refreshSession();
+          if (refreshError) {
+            console.error('Error refreshing session:', refreshError);
+          } else {
+            console.log('Session refresh successful');
+          }
+        } catch (e) {
+          console.error('Exception refreshing session:', e);
+        }
+        
         // Check the session after all token handling attempts
         console.log('Checking current session');
         const { data, error: sessionError } = await supabase.auth.getSession();
@@ -133,6 +149,10 @@ const AuthCallback = () => {
           // If it was an email confirmation but we couldn't establish a session,
           // redirect to login with success message
           console.log('Email confirmed but no session, redirecting to login with message');
+          toast({
+            title: "Email confirmed",
+            description: "Your email has been confirmed. Please log in.",
+          });
           navigate('/auth/login', { 
             state: { message: 'Email confirmed successfully. Please log in.' } 
           });
@@ -141,6 +161,10 @@ const AuthCallback = () => {
           // make a final attempt with any tokens we have
           if (isEmailConfirmation && (accessToken || confirmationToken)) {
             console.log('Making final attempt to handle email confirmation');
+            toast({
+              title: "Email confirmation processed",
+              description: "Please log in to continue.",
+            });
             navigate('/auth/login', { 
               state: { message: 'Email confirmation processed. Please log in to continue.' } 
             });

@@ -14,21 +14,30 @@ const Index = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Check if we're actually on a confirmation flow but somehow landed on the index page
+  // Enhanced detection of confirmation links
   useEffect(() => {
+    // Log all the information for debugging
+    console.log('Current URL:', window.location.href);
+    console.log('Search params:', location.search);
+    console.log('Hash:', location.hash);
+    
     const url = window.location.href;
     const queryParams = new URLSearchParams(location.search);
     
+    // More comprehensive checks for confirmation indicators
     const hasConfirmationIndicators = 
       url.includes('confirmation_token') || 
       queryParams.has('confirmation_token') ||
       url.includes('type=signup') || 
       queryParams.get('type') === 'signup' ||
       url.includes('confirm') ||
-      queryParams.has('token');
+      url.includes('verify') ||
+      queryParams.has('token') ||
+      url.includes('token=');
     
     if (hasConfirmationIndicators) {
       console.log('Detected confirmation indicators on Index page, redirecting to auth callback');
+      // Redirect with all possible parameters
       navigate('/auth/callback' + location.search + location.hash);
     }
   }, [navigate, location]);

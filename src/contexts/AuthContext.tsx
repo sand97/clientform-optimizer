@@ -1,3 +1,4 @@
+
 import { createContext, useContext, useEffect, useState } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -77,12 +78,16 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const signUp = async (email: string, password: string, name: string, surname: string) => {
     try {
+      // Explicitly set the full redirect URL to the auth callback page
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log("Email confirmation redirect URL:", redirectUrl);
+      
       const { error } = await supabase.auth.signUp({
         email,
         password,
         options: {
           data: { name, surname },
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: redirectUrl,
         },
       });
       if (error) throw error;
