@@ -1,19 +1,26 @@
 
 import React, { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const { user, signOut } = useAuth();
+
+  const handleLogout = async () => {
+    await signOut();
+  };
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-white/90 backdrop-blur-sm z-50 border-b border-gray-200">
-      <div className="site-container py-4">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
-            <a href="#" className="text-2xl font-bold text-blue-500">
+            <Link to="/" className="text-2xl font-bold text-blue-500">
               Form<span className="text-gray-800">Filler</span>
-            </a>
+            </Link>
           </div>
           
           {/* Desktop Menu */}
@@ -28,8 +35,21 @@ const Navbar = () => {
               Pricing
             </a>
             <div className="flex space-x-2">
-              <Button variant="outline" className="mr-1">Log in</Button>
-              <Button>Get Started</Button>
+              {user ? (
+                <>
+                  <Button variant="outline" className="mr-1" as={Link} to="/dashboard">
+                    Dashboard
+                  </Button>
+                  <Button variant="ghost" onClick={handleLogout}>Log out</Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="outline" className="mr-1" as={Link} to="/auth/login">
+                    Log in
+                  </Button>
+                  <Button as={Link} to="/auth/register">Get Started</Button>
+                </>
+              )}
             </div>
           </div>
           
@@ -70,8 +90,49 @@ const Navbar = () => {
                 Pricing
               </a>
               <div className="flex flex-col space-y-3 pt-3">
-                <Button variant="outline" className="w-full">Log in</Button>
-                <Button className="w-full">Get Started</Button>
+                {user ? (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      className="w-full" 
+                      as={Link} 
+                      to="/dashboard" 
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Dashboard
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      className="w-full" 
+                      onClick={() => {
+                        handleLogout();
+                        setIsMenuOpen(false);
+                      }}
+                    >
+                      Log out
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <Button 
+                      variant="outline" 
+                      className="w-full" 
+                      as={Link} 
+                      to="/auth/login" 
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Log in
+                    </Button>
+                    <Button 
+                      className="w-full" 
+                      as={Link} 
+                      to="/auth/register" 
+                      onClick={() => setIsMenuOpen(false)}
+                    >
+                      Get Started
+                    </Button>
+                  </>
+                )}
               </div>
             </div>
           </div>
