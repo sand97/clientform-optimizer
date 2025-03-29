@@ -94,6 +94,47 @@ export type Database = {
           },
         ]
       }
+      invitations: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          id: string
+          invited_by: string
+          organization_id: string
+          role: string
+          status: string | null
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at?: string
+          id?: string
+          invited_by: string
+          organization_id: string
+          role: string
+          status?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          id?: string
+          invited_by?: string
+          organization_id?: string
+          role?: string
+          status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "invitations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       organization_members: {
         Row: {
           created_at: string
@@ -174,27 +215,177 @@ export type Database = {
         }
         Relationships: []
       }
+      submissions: {
+        Row: {
+          created_at: string | null
+          field_values: Json
+          form_data: Json
+          form_id: string
+          id: string
+          organization_id: string | null
+          template_data: Json
+          template_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          field_values: Json
+          form_data: Json
+          form_id: string
+          id?: string
+          organization_id?: string | null
+          template_data: Json
+          template_id: string
+        }
+        Update: {
+          created_at?: string | null
+          field_values?: Json
+          form_data?: Json
+          form_id?: string
+          id?: string
+          organization_id?: string | null
+          template_data?: Json
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "submissions_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "submissions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      templates: {
+        Row: {
+          created_at: string
+          form_id: string
+          id: string
+          original_pdf_name: string
+          page_height: number
+          page_width: number
+          pdf_url: string
+          positions: Json
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          form_id: string
+          id?: string
+          original_pdf_name?: string
+          page_height?: number
+          page_width?: number
+          pdf_url: string
+          positions: Json
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          form_id?: string
+          id?: string
+          original_pdf_name?: string
+          page_height?: number
+          page_width?: number
+          pdf_url?: string
+          positions?: Json
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "templates_form_id_fkey"
+            columns: ["form_id"]
+            isOneToOne: false
+            referencedRelation: "forms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       organization_members_with_users: {
         Row: {
-          id: string
-          user_id: string
-          organization_id: string
-          role: string
-          created_at: string
-          email: string
-          user_metadata: {
-            full_name?: string
-            name?: string
-          }
+          created_at: string | null
+          email: string | null
+          id: string | null
+          organization_id: string | null
+          raw_user_meta_data: Json | null
+          role: string | null
+          user_id: string | null
         }
-        Insert: never
-        Update: never
+        Relationships: [
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
-      [_ in never]: never
+      accept_invitation: {
+        Args: {
+          invitation_id: string
+        }
+        Returns: undefined
+      }
+      get_organization_members_with_users: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          id: string
+          organization_id: string
+          user_id: string
+          role: string
+          created_at: string
+          email: string
+          user_metadata: Json
+        }[]
+      }
+      has_pending_invitation: {
+        Args: {
+          user_id: string
+          org_id: string
+        }
+        Returns: boolean
+      }
+      is_organization_admin: {
+        Args: {
+          org_id: string
+        }
+        Returns: boolean
+      }
+      is_organization_member:
+        | {
+            Args: {
+              org_id: string
+            }
+            Returns: boolean
+          }
+        | {
+            Args: {
+              user_id: string
+              org_id: string
+            }
+            Returns: boolean
+          }
     }
     Enums: {
       [_ in never]: never

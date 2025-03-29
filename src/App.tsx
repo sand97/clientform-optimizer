@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -25,6 +26,7 @@ import ManageAccount from './pages/Account/ManageAccount';
 import Templates from '@/pages/Templates/Templates';
 import CreateTemplate from '@/pages/Templates/CreateTemplate';
 import SubmitTemplate from '@/pages/Templates/SubmitTemplate';
+import SubmissionsPage from '@/pages/Submissions/SubmissionsPage';
 
 const queryClient = new QueryClient();
 
@@ -64,6 +66,7 @@ const App = () => (
               <Route path="/account/settings" element={<ManageAccount />} />
               <Route path="/templates" element={<Templates />} />
               <Route path="/templates/create" element={<CreateTemplate />} />
+              <Route path="/submissions" element={<SubmissionsPage />} />
             </Route>
             
             {/* Public Routes */}
