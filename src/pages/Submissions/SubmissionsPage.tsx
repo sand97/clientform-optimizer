@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,18 +27,24 @@ export default function SubmissionsPage() {
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
 
-  // Fetch submissions
+  // Updated query to fetch submissions with template information
   const { data: submissions, isLoading, error } = useQuery({
     queryKey: ['submissions'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('submissions')
-        .select('*')
+        .select(`
+          *,
+          templates:template_id (
+            original_pdf_name,
+            pdf_url
+          )
+        `)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
       
-      // Parse the JSON strings into objects
+      // Parse the JSON strings into objects and include template information
       return data.map(item => ({
         ...item,
         form_data: typeof item.form_data === 'string' ? JSON.parse(item.form_data) : item.form_data,
@@ -137,7 +144,9 @@ export default function SubmissionsPage() {
                 {submissions.map((submission) => (
                   <TableRow key={submission.id}>
                     <TableCell className="font-medium">{submission.form_data.name}</TableCell>
-                    <TableCell>{submission.template_data.original_pdf_name || 'Unnamed Template'}</TableCell>
+                    <TableCell>
+                      {submission.templates?.original_pdf_name || 'Unnamed Template'}
+                    </TableCell>
                     <TableCell>
                       {Object.keys(submission.field_values).length} fields filled
                     </TableCell>
