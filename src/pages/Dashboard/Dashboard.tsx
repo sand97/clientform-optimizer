@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { BarChart, Users, FileText, Settings, Plus } from 'lucide-react';
 import UserMenu from '@/components/layout/UserMenu';
+import OrganizationSelector from '@/components/layout/OrganizationSelector';
 
 interface Organization {
   id: string;
@@ -25,7 +25,6 @@ const Dashboard = () => {
   const [userName, setUserName] = useState('');
 
   useEffect(() => {
-    // Extract user name from metadata or email
     if (user) {
       const metadata = user.user_metadata;
       if (metadata && metadata.full_name) {
@@ -33,7 +32,6 @@ const Dashboard = () => {
       } else if (metadata && metadata.name) {
         setUserName(metadata.name);
       } else if (user.email) {
-        // Use email prefix as name if no name is available
         setUserName(user.email.split('@')[0]);
       }
     }
@@ -44,7 +42,6 @@ const Dashboard = () => {
       if (!user) return;
 
       try {
-        // Get organizations where the user is a member
         const { data, error } = await supabase
           .from('organization_members')
           .select(`
@@ -55,11 +52,9 @@ const Dashboard = () => {
 
         if (error) throw error;
 
-        // Extract organizations from the joined query
         const orgs = data.map(item => item.organizations) as Organization[];
         setOrganizations(orgs);
         
-        // Set first organization as current if we don't have one selected
         if (orgs.length > 0 && !currentOrganization) {
           setCurrentOrganization(orgs[0]);
         }
@@ -85,12 +80,10 @@ const Dashboard = () => {
     const selected = organizations.find(org => org.id === id);
     if (selected) {
       setCurrentOrganization(selected);
-      // Will be implemented when we add organization-specific features
       navigate(`/organizations/${id}`);
     }
   };
 
-  // If no organizations, redirect to create one
   useEffect(() => {
     if (!loading && organizations.length === 0 && user) {
       navigate('/organizations/create');
@@ -105,13 +98,14 @@ const Dashboard = () => {
     <div className="min-h-screen bg-gray-50">
       <div className="bg-white shadow">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex justify-end items-center">
-            <UserMenu 
-              userName={userName}
+          <div className="flex justify-between items-center">
+            <OrganizationSelector 
               organizations={organizations}
               currentOrganization={currentOrganization}
               onSelectOrganization={handleSelectOrganization}
+              onCreate={handleCreateOrganization}
             />
+            <UserMenu userName={userName} />
           </div>
         </div>
       </div>
