@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { FIELD_TYPES } from '@/constants/formFields';
 import { Field } from '@/types/forms';
-import { Info, Trash2 } from 'lucide-react';
+import { Info, Trash2, ArrowUp, ArrowDown } from 'lucide-react';
 
 interface FieldListProps {
   fields: Field[];
@@ -15,9 +15,24 @@ interface FieldListProps {
 }
 
 const FieldList = ({ fields, onFieldUpdate, onFieldDelete }: FieldListProps) => {
+  const moveField = (id: string, direction: 'up' | 'down') => {
+    const currentIndex = fields.findIndex(f => f.id === id);
+    if (direction === 'up' && currentIndex > 0) {
+      const updatedFields = [...fields];
+      [updatedFields[currentIndex], updatedFields[currentIndex - 1]] = 
+      [updatedFields[currentIndex - 1], updatedFields[currentIndex]];
+      onFieldUpdate(updatedFields.map((field, index) => ({ ...field, order_position: index })));
+    } else if (direction === 'down' && currentIndex < fields.length - 1) {
+      const updatedFields = [...fields];
+      [updatedFields[currentIndex], updatedFields[currentIndex + 1]] = 
+      [updatedFields[currentIndex + 1], updatedFields[currentIndex]];
+      onFieldUpdate(updatedFields.map((field, index) => ({ ...field, order_position: index })));
+    }
+  };
+
   return (
     <div className="space-y-4">
-      {fields.map((field) => (
+      {fields.map((field, index) => (
         <Card key={field.id} className="bg-white shadow-sm">
           <CardContent className="p-3">
             <div className="flex w-full items-center justify-between pb-3">
@@ -64,8 +79,8 @@ const FieldList = ({ fields, onFieldUpdate, onFieldDelete }: FieldListProps) => 
               <Button 
                 disabled={fields.length === 1}
                 type="button" 
-                className='mr-8'
-                variant="destructive" 
+                className='mr-8 bg-red-50 text-red-600 hover:bg-red-100'
+                variant="secondary" 
                 onClick={() => onFieldDelete(field.id)}
               >
                 <Trash2 className="mr-2 h-4 w-4" />
@@ -77,7 +92,7 @@ const FieldList = ({ fields, onFieldUpdate, onFieldDelete }: FieldListProps) => 
               <div className="w-full">
                 <Input 
                   className="w-full text-lg" 
-                  placeholder="Field name" 
+                  placeholder="e.g., Full Name, Email Address, Phone Number" 
                   value={field.name}
                   onChange={(e) => {
                     const updatedFields = fields.map(f => 
@@ -89,25 +104,22 @@ const FieldList = ({ fields, onFieldUpdate, onFieldDelete }: FieldListProps) => 
                   }}
                 />
               </div>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="h-6 w-6 rounded-full flex items-center justify-center">
-                      <Info className="h-4 w-4 text-gray-500" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-gray-800 text-white">
-                    <p>Enter a descriptive name for this field</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                <Button
+                  disabled={index === 0}
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-full"
+                  onClick={() => moveField(field.id, 'up')}
+                >
+                  <ArrowUp className="h-4 w-4" />
+                </Button>
             </div>
             
             <div className="flex items-center justify-between pb-3 space-x-2">
               <div className="w-full">
                 <Input 
                   className="w-full text-lg" 
-                  placeholder="Field placeholder" 
+                  placeholder="e.g., Enter your full name, john@example.com, (555) 123-4567" 
                   value={field.placeholder || ''}
                   onChange={(e) => {
                     const updatedFields = fields.map(f => 
@@ -119,18 +131,15 @@ const FieldList = ({ fields, onFieldUpdate, onFieldDelete }: FieldListProps) => 
                   }}
                 />
               </div>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="h-6 w-6 rounded-full flex items-center justify-center">
-                      <Info className="h-4 w-4 text-gray-500" />
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent className="bg-gray-800 text-white">
-                    <p>Text that will appear inside the empty field</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+                <Button
+                  disabled={index === fields.length - 1}
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 rounded-full"
+                  onClick={() => moveField(field.id, 'down')}
+                >
+                  <ArrowDown className="h-4 w-4" />
+                </Button>
             </div>
 
             {(field.type === 'dropdown' || field.type === 'checkbox') && (
