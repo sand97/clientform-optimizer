@@ -55,22 +55,25 @@ const TeamMembers = () => {
       try {
         setLoading(true);
         
+        // Query just the organization_members table instead of the view
         const { data, error } = await supabase
-          .from('organization_members_with_users')
+          .from('organization_members')
           .select('*')
           .eq('organization_id', organizationId);
           
         if (error) throw error;
         
         // Transform the data to match our TeamMember type
-        const transformedMembers = data.map(member => ({
+        // Since we don't have access to email and metadata directly,
+        // we'll just use the user_id for now and display that
+        const transformedMembers: TeamMember[] = data.map(member => ({
           id: member.id || '',
           organization_id: member.organization_id || '',
           user_id: member.user_id || '',
           role: member.role || '',
           created_at: member.created_at || '',
-          email: member.email || '',
-          raw_user_meta_data: member.raw_user_meta_data
+          email: member.user_id || '', // Use user_id as email placeholder
+          raw_user_meta_data: null
         }));
 
         setMembers(transformedMembers);
@@ -171,16 +174,11 @@ const TeamMembers = () => {
     });
   };
 
-  // Get display name from user metadata
+  // Get display name from user ID - simplified version
   const getDisplayName = (member: TeamMember) => {
-    if (!member.raw_user_meta_data) return member.email;
-    
-    const metadata = member.raw_user_meta_data;
-    
-    if (metadata.full_name) return metadata.full_name;
-    if (metadata.name) return metadata.name;
-    
-    return member.email;
+    // Just display the first 8 characters of the user ID as a placeholder
+    // Since we don't have access to the user's name directly
+    return `User ${member.user_id.substring(0, 8)}...`;
   };
 
   if (loading) {
@@ -279,12 +277,12 @@ const TeamMembers = () => {
                 <li key={member.user_id} className="py-4 flex items-center justify-between">
                   <div className="flex items-center space-x-4">
                     <Avatar>
-                      <AvatarImage src={`https://avatar.vercel.sh/${member.email}.png`} />
-                      <AvatarFallback>{getDisplayName(member).substring(0, 2).toUpperCase()}</AvatarFallback>
+                      <AvatarImage src={`https://avatar.vercel.sh/${member.user_id}.png`} />
+                      <AvatarFallback>{member.user_id.substring(0, 2).toUpperCase()}</AvatarFallback>
                     </Avatar>
                     <div>
                       <p className="font-medium">{getDisplayName(member)}</p>
-                      <p className="text-gray-500 text-sm">{member.email}</p>
+                      <p className="text-gray-500 text-sm">{member.user_id}</p>
                     </div>
                   </div>
                   <div>
