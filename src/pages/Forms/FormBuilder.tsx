@@ -172,6 +172,11 @@ const FormBuilder = () => {
       }));
     
     setFields(updatedFields);
+    
+    toast({
+      title: "Field deleted",
+      description: "The field has been removed from your form.",
+    });
   };
 
   const saveForm = async () => {
@@ -246,22 +251,10 @@ const FormBuilder = () => {
     }
   };
 
-  const onDeleteField = () => {
-    if (fields.length > 0) {
-      const updatedFields = [...fields];
-      updatedFields.pop();
-      setFields(updatedFields);
-      
-      toast({
-        title: "Field deleted",
-        description: "The last field has been removed from your form.",
-      });
-    } else {
-      toast({
-        title: "No fields to delete",
-        description: "There are no fields to delete.",
-        variant: "destructive",
-      });
+  const onAddAnotherField = () => {
+    const element = document.querySelector('form button[type="submit"]');
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
   };
 
@@ -506,14 +499,16 @@ const FormBuilder = () => {
               </Card>
             )}
             
-            <Button 
-              variant="destructive"
-              className="w-full"
-              onClick={onDeleteField}
-            >
-              <Trash2 className="mr-2 h-4 w-4" />
-              Delete Field
-            </Button>
+            {fields.length > 0 && (
+              <Button 
+                variant="default"
+                className="w-full"
+                onClick={onAddAnotherField}
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Another Field
+              </Button>
+            )}
 
             <div className="flex justify-between">
               <Button 
