@@ -1,15 +1,16 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 
 const HeroSection = () => {
   return (
-    <section className="pt-28 md:pt-32 pb-16 md:pb-24 bg-gradient-to-b from-blue-50 to-white">
+    <section className="pt-36 md:pt-32 pb-24 md:pb-24 bg-gradient-to-b from-blue-50 to-white">
       <div className="site-container">
         <div className="container mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-6 md:space-y-8 lg:pr-12 animate-fade-in">
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
+            <div className="space-y-8 md:space-y-8 lg:pr-12 animate-fade-in">
+              <h1 className="text-5xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
                 Smart forms that <span className="text-blue-500">simplify</span> document collection
               </h1>
               <p className="text-xl text-gray-600 md:pr-8">
