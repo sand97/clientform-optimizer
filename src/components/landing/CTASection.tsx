@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
 
 const CTASection = () => {
-  return <section className="section-padding bg-white">
-      <div className="container mx-auto px-4 md:px-6">
+  return (
+    <section className="section-padding bg-white">
+      <div className="site-container">
         <div className="bg-gradient-to-r from-blue-600 to-blue-500 rounded-2xl px-6 py-12 md:p-16 text-center">
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">
@@ -29,7 +30,8 @@ const CTASection = () => {
           </div>
         </div>
       </div>
-    </section>;
+    </section>
+  );
 };
 
 export default CTASection;

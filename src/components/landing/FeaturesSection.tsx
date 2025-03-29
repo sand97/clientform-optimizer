@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Check, FileCog, FilePen, FileCheck, MoveRight, UserCheck, Monitor, Timer, RefreshCw } from 'lucide-react';
 
@@ -38,7 +37,7 @@ const features = [
 const FeaturesSection = () => {
   return (
     <section id="features" className="section-padding bg-white">
-      <div className="container mx-auto">
+      <div className="site-container">
         <div className="text-center max-w-3xl mx-auto mb-16">
           <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
             Features designed to improve your workflow
