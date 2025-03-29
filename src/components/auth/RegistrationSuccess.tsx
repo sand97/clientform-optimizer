@@ -1,7 +1,9 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { CheckCircle2 } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { CheckCircle2, Mail, LogIn } from 'lucide-react';
 
 interface RegistrationSuccessProps {
   email: string;
@@ -28,6 +30,22 @@ const RegistrationSuccess = ({ email }: RegistrationSuccessProps) => {
           If you don't see the email in your inbox, please check your spam or junk folder.
         </p>
       </CardContent>
+      <CardFooter className="flex flex-col gap-3 pt-2">
+        <Button 
+          variant="outline" 
+          className="w-full bg-white text-blue-600 border-blue-300 hover:bg-blue-50"
+          onClick={() => window.location.href = "mailto:bruceguenkam@gmail.com"}
+        >
+          <Mail className="mr-2 h-4 w-4" />
+          Contact Support
+        </Button>
+        <Link to="/auth/login" className="w-full">
+          <Button className="w-full" variant="secondary">
+            <LogIn className="mr-2 h-4 w-4" />
+            Go to Login
+          </Button>
+        </Link>
+      </CardFooter>
     </Card>
   );
 };
