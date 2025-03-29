@@ -15,7 +15,7 @@ import {
   PopoverTrigger 
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
-import { ChevronDown, LogOut, MessageSquare, User } from 'lucide-react';
+import { ChevronDown, LogOut, MessageSquare, User, Settings } from 'lucide-react';
 
 interface Organization {
   id: string;
@@ -117,14 +117,14 @@ const UserMenu = ({
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
           <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/account/settings')}>
-            <User className="mr-2 h-4 w-4" />
+            <Settings className="mr-2 h-4 w-4" />
             Account Settings
           </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem className="cursor-pointer" onClick={handleContactUs}>
             <MessageSquare className="mr-2 h-4 w-4" />
             Contact Us
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem className="cursor-pointer" onClick={handleLogout}>
             <LogOut className="mr-2 h-4 w-4" />
             Logout
