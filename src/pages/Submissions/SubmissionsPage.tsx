@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +18,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 interface SubmissionTemplate {
   original_pdf_name: string;
   pdf_url: string;
+  form_name?: string;
 }
 
 interface Submission {
@@ -41,7 +43,11 @@ export default function SubmissionsPage() {
           *,
           templates:template_id (
             original_pdf_name,
-            pdf_url
+            pdf_url,
+            form_id
+          ),
+          forms:form_id (
+            name
           )
         `)
         .order('created_at', { ascending: false });
@@ -54,6 +60,11 @@ export default function SubmissionsPage() {
         form_data: typeof item.form_data === 'string' ? JSON.parse(item.form_data) : item.form_data,
         template_data: typeof item.template_data === 'string' ? JSON.parse(item.template_data) : item.template_data,
         field_values: typeof item.field_values === 'string' ? JSON.parse(item.field_values) : item.field_values,
+        // Add form name to templates if available
+        templates: item.templates ? {
+          ...item.templates,
+          form_name: item.forms?.name
+        } : undefined
       })) as Submission[];
     }
   });
@@ -149,7 +160,10 @@ export default function SubmissionsPage() {
                   <TableRow key={submission.id}>
                     <TableCell className="font-medium">{submission.form_data.name}</TableCell>
                     <TableCell>
-                      {submission.templates?.original_pdf_name || 'Unnamed Template'}
+                      {submission.templates ? 
+                        (submission.templates.original_pdf_name || 'Unnamed Template') : 
+                        'No Template'
+                      }
                     </TableCell>
                     <TableCell>
                       {Object.keys(submission.field_values).length} fields filled
