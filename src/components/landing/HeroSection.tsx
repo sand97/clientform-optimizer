@@ -1,13 +1,10 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { ArrowRight } from 'lucide-react';
-
 const HeroSection = () => {
-  return (
-    <section className="pt-20 md:pt-24 pb-16 md:pb-16 bg-gradient-to-b from-blue-50 to-white">
+  return <section className="pt-20 md:pt-24 pb-16 md:pb-16 bg-gradient-to-b from-blue-50 to-white">
       <div className="px-1 md:px-2 mx-auto">
-        <div className="container mx-auto">
+        <div className="site-container mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
             <div className="space-y-6 md:space-y-8 lg:pr-4 animate-fade-in">
               <h1 className="text-5xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
@@ -64,8 +61,6 @@ const HeroSection = () => {
           </div>
         </div>
       </div>
-    </section>
-  );
+    </section>;
 };
-
 export default HeroSection;
