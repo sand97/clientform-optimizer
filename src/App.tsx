@@ -48,6 +48,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/organizations/create" element={<CreateOrganization />} />
               <Route path="/forms/create" element={<FormBuilder />} />
+              <Route path="/forms/:id" element={<FormBuilder />} />
             </Route>
             
             {/* Catch-all route */}
