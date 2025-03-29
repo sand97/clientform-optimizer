@@ -112,6 +112,7 @@ const Dashboard = () => {
       if (!user) return;
 
       try {
+        // Fetch personal forms
         const { data: personalForms, error: personalFormsError } = await supabase
           .from('forms')
           .select('id, name, description, created_at, organization_id')
@@ -121,27 +122,33 @@ const Dashboard = () => {
 
         if (personalFormsError) throw personalFormsError;
 
-        const { data: orgForms, error: orgFormsError } = await supabase
-          .from('forms')
-          .select(`
-            id, 
-            name, 
-            description, 
-            created_at, 
-            organization_id,
-            organizations:organization_id(name)
-          `)
-          .not('organization_id', 'is', null)
-          .order('created_at', { ascending: false });
+        let allForms = personalForms;
 
-        if (orgFormsError) throw orgFormsError;
+        // Only fetch organization forms if there's a current organization
+        if (currentOrganization) {
+          const { data: orgForms, error: orgFormsError } = await supabase
+            .from('forms')
+            .select(`
+              id, 
+              name, 
+              description, 
+              created_at, 
+              organization_id,
+              organizations:organization_id(name)
+            `)
+            .eq('organization_id', currentOrganization.id)
+            .order('created_at', { ascending: false });
 
-        const organizationForms = orgForms.map(form => ({
-          ...form,
-          organization_name: form.organizations?.name
-        }));
+          if (orgFormsError) throw orgFormsError;
 
-        const allForms = [...personalForms, ...organizationForms];
+          const organizationForms = orgForms.map(form => ({
+            ...form,
+            organization_name: form.organizations?.name
+          }));
+
+          allForms = [...personalForms, ...organizationForms];
+        }
+
         setForms(allForms);
       } catch (error: any) {
         toast({
@@ -153,7 +160,7 @@ const Dashboard = () => {
     };
 
     fetchForms();
-  }, [user, toast]);
+  }, [user, currentOrganization, toast]);
 
   useEffect(() => {
     const fetchMembers = async () => {
