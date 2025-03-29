@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
-import { ArrowLeft, Plus, Save, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Plus, Save, ArrowRight, Info } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 
 import { Button } from '@/components/ui/button';
@@ -22,8 +22,6 @@ import {
   CardDescription, 
   CardHeader, 
   CardTitle,
-  CardGroupedInput,
-  CardGroupedCell
 } from '@/components/ui/card';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
@@ -37,6 +35,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import FieldCard from '@/components/forms/FieldCard';
 import { FIELD_TYPES } from '@/constants/formFields';
 import { Field, Organization } from '@/types/forms';
@@ -353,24 +352,23 @@ const FormBuilder = () => {
               <CardContent>
                 <Form {...fieldForm}>
                   <form onSubmit={fieldForm.handleSubmit(addField)} className="space-y-4">
-                    <Card className="border-dashed border-2 bg-white">
+                    <Card className="bg-white shadow-sm">
                       <CardContent className="p-6">
-                        <CardGroupedInput className="mb-4">
-                          <CardGroupedCell label="FIELD NAME">
-                            <FormField
-                              control={fieldForm.control}
-                              name="name"
-                              render={({ field }) => (
-                                <Input 
-                                  className="border-0 shadow-none px-0 h-auto text-lg" 
-                                  placeholder="e.g., Full Name" 
-                                  {...field} 
-                                />
-                              )}
-                            />
-                          </CardGroupedCell>
-                          
-                          <CardGroupedCell label="FIELD TYPE">
+                        <div className="space-y-4">
+                          <div className="flex items-center justify-between border-b pb-3">
+                            <div className="flex items-center">
+                              <span className="text-gray-600 mr-2">Field Type</span>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span><Info className="h-4 w-4 text-gray-400" /></span>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-gray-800 text-white">
+                                    <p>Select the type of field you want to add</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                             <FormField
                               control={fieldForm.control}
                               name="type"
@@ -380,7 +378,7 @@ const FormBuilder = () => {
                                   defaultValue={field.value}
                                 >
                                   <FormControl>
-                                    <SelectTrigger className="border-0 shadow-none px-0 h-auto text-lg">
+                                    <SelectTrigger className="w-[180px]">
                                       <SelectValue placeholder="Select a field type" />
                                     </SelectTrigger>
                                   </FormControl>
@@ -394,48 +392,97 @@ const FormBuilder = () => {
                                 </Select>
                               )}
                             />
-                          </CardGroupedCell>
+                          </div>
                           
-                          <CardGroupedCell label="OPTIONS">
-                            <div className="flex items-center h-full">
-                              <FormField
-                                control={fieldForm.control}
-                                name="required"
-                                render={({ field }) => (
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      id="required"
-                                      checked={field.value}
-                                      onCheckedChange={field.onChange}
-                                    />
-                                    <label
-                                      htmlFor="required"
-                                      className="text-sm leading-none cursor-pointer"
-                                    >
-                                      Required Field
-                                    </label>
-                                  </div>
-                                )}
-                              />
+                          <div className="flex items-center justify-between border-b pb-3">
+                            <div className="flex items-center">
+                              <span className="text-gray-600 mr-2">Field Name</span>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span><Info className="h-4 w-4 text-gray-400" /></span>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-gray-800 text-white">
+                                    <p>Enter a name for your field (required)</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
                             </div>
-                          </CardGroupedCell>
-                        </CardGroupedInput>
-                        
-                        <CardGroupedInput>
-                          <CardGroupedCell label="PLACEHOLDER" fullWidth>
+                            <FormField
+                              control={fieldForm.control}
+                              name="name"
+                              render={({ field }) => (
+                                <Input 
+                                  className="max-w-[300px]" 
+                                  placeholder="e.g., Full Name" 
+                                  {...field} 
+                                />
+                              )}
+                            />
+                          </div>
+                          
+                          <div className="flex items-center justify-between border-b pb-3">
+                            <div className="flex items-center">
+                              <span className="text-gray-600 mr-2">Placeholder</span>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span><Info className="h-4 w-4 text-gray-400" /></span>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-gray-800 text-white">
+                                    <p>Text that appears in the empty field</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
                             <FormField
                               control={fieldForm.control}
                               name="placeholder"
                               render={({ field }) => (
                                 <Input 
-                                  className="border-0 shadow-none px-0 h-auto text-lg" 
+                                  className="max-w-[300px]" 
                                   placeholder="e.g., Enter your full name" 
                                   {...field} 
                                 />
                               )}
                             />
-                          </CardGroupedCell>
-                        </CardGroupedInput>
+                          </div>
+                          
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center">
+                              <span className="text-gray-600 mr-2">Required Field</span>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span><Info className="h-4 w-4 text-gray-400" /></span>
+                                  </TooltipTrigger>
+                                  <TooltipContent className="bg-gray-800 text-white">
+                                    <p>Users must fill out required fields</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                            <FormField
+                              control={fieldForm.control}
+                              name="required"
+                              render={({ field }) => (
+                                <div className="flex items-center space-x-2">
+                                  <Checkbox
+                                    id="required"
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                  />
+                                  <label
+                                    htmlFor="required"
+                                    className="text-sm leading-none cursor-pointer"
+                                  >
+                                    Yes
+                                  </label>
+                                </div>
+                              )}
+                            />
+                          </div>
+                        </div>
 
                         <Button type="submit" className="w-full mt-6">
                           <Plus className="mr-2 h-4 w-4" />
@@ -464,6 +511,20 @@ const FormBuilder = () => {
                       />
                     ))}
                   </div>
+                  
+                  <Button 
+                    variant="outline"
+                    className="w-full mt-4 border-dashed"
+                    onClick={() => {
+                      const element = document.querySelector('form button[type="submit"]');
+                      if (element) {
+                        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                      }
+                    }}
+                  >
+                    <Plus className="mr-2 h-4 w-4" />
+                    Add Another Field
+                  </Button>
                 </CardContent>
               </Card>
             )}
