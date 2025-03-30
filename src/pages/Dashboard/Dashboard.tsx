@@ -10,12 +10,6 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Organization, Template, TeamMember } from '@/types/forms';
 
-interface Organization {
-  id: string;
-  name: string;
-  created_at: string;
-}
-
 interface Form {
   id: string;
   name: string;

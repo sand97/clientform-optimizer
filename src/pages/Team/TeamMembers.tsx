@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -46,11 +47,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import OrganizationSelector from '@/components/layout/OrganizationSelector';
 
-interface Organization {
-  id: string;
-  name: string;
-  created_at: string;
-}
+// Removed duplicate Organization interface
 
 const TeamMembers = () => {
   const { user } = useAuth();
@@ -140,18 +137,29 @@ const TeamMembers = () => {
           userRoleData?.role === 'owner'
         );
         
-        // Get all members - using the view directly without an intermediary function
+        // Get all members with organization name
         const { data, error } = await supabase
           .from('organization_members_with_users')
-          .select('*')
+          .select('*, organizations:organization_id(name)')
           .eq('organization_id', currentOrganization.id);
 
         if (error) throw error;
 
         console.log('Members data:', data);
 
-        // Map the results to match TeamMember type
-        setMembers(data as TeamMember[]);
+        // Map the results to include organization name
+        const membersWithOrgName = data.map(member => ({
+          id: member.id || '',
+          organization_id: member.organization_id || '',
+          user_id: member.user_id || '',
+          role: member.role || '',
+          created_at: member.created_at || '',
+          email: member.email || '',
+          raw_user_meta_data: member.raw_user_meta_data || null,
+          organization_name: member.organizations?.name || currentOrganization.name
+        }));
+
+        setMembers(membersWithOrgName);
       } catch (error: any) {
         console.error('Error fetching members:', error);
         toast({

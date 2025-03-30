@@ -60,5 +60,6 @@ export interface TeamMember {
   role: string;
   created_at: string;
   email: string;
-  raw_user_meta_data: any; // Changed from specific structure to any to match Supabase's Json type
+  raw_user_meta_data: any; // This uses 'any' type to avoid excessive type instantiation
+  organization_name?: string; // Added organization_name field
 }
