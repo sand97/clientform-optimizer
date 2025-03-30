@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
@@ -36,6 +37,7 @@ const CreateOrganization = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCheckingOrganizations, setIsCheckingOrganizations] = useState(true);
+  const [hasValidOrganization, setHasValidOrganization] = useState(false);
 
   const form = useForm<OrganizationFormValues>({
     resolver: zodResolver(organizationSchema),
@@ -49,18 +51,33 @@ const CreateOrganization = () => {
       if (!user) return;
       
       try {
-        const { data, error } = await supabase
+        // First check if we have any organization memberships
+        const { data: memberships, error: membershipError } = await supabase
           .from('organization_members')
-          .select('organization_id')
+          .select('organization_id, organizations:organization_id(id, name)')
           .eq('user_id', user.id);
           
-        if (error) throw error;
+        if (membershipError) throw membershipError;
         
-        console.log('CreateOrg - Checking organization membership:', data);
+        console.log('CreateOrg - Checking organization membership:', memberships);
         
-        if (data && data.length > 0) {
+        // Check if any of the memberships have a valid organization
+        const validOrganizations = memberships?.filter(m => 
+          m.organizations && m.organizations.id && m.organizations.name
+        );
+        
+        if (validOrganizations && validOrganizations.length > 0) {
+          console.log('CreateOrg - Found valid organizations, redirecting to dashboard');
+          setHasValidOrganization(true);
           navigate('/dashboard');
           return;
+        }
+        
+        // If no valid organizations, check if we need to fix the data
+        if (memberships && memberships.length > 0) {
+          console.log('CreateOrg - User has memberships but no valid organizations');
+          // We have memberships but no valid organizations, let user create a new one
+          setHasValidOrganization(false);
         }
       } catch (error) {
         console.error('Error checking organizations:', error);
@@ -146,6 +163,17 @@ const CreateOrganization = () => {
         <div className="text-center">
           <div className="animate-spin h-8 w-8 border-4 border-t-blue-500 border-gray-200 rounded-full mx-auto"></div>
           <p className="mt-4 text-gray-600">Checking organization status...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (hasValidOrganization) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-t-blue-500 border-gray-200 rounded-full mx-auto"></div>
+          <p className="mt-4 text-gray-600">Redirecting to dashboard...</p>
         </div>
       </div>
     );

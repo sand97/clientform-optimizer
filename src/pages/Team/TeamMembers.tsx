@@ -31,6 +31,7 @@ const TeamMembers = () => {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [hasCheckedOrgs, setHasCheckedOrgs] = useState(false);
+  const [redirectingToCreate, setRedirectingToCreate] = useState(false);
 
   const inviteFormSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email address" }),
@@ -104,11 +105,17 @@ const TeamMembers = () => {
   }, [user, toast, organizationId, navigate]);
 
   useEffect(() => {
-    if (!loading && hasCheckedOrgs && organizations.length === 0 && rawOrganizationIds.length === 0 && user) {
+    if (!loading && 
+        hasCheckedOrgs && 
+        organizations.length === 0 && 
+        rawOrganizationIds.length === 0 && 
+        user && 
+        !redirectingToCreate) {
       console.log('No organizations found in TeamMembers, redirecting to create organization');
+      setRedirectingToCreate(true);
       navigate('/organizations/create');
     }
-  }, [loading, hasCheckedOrgs, organizations, rawOrganizationIds, user, navigate]);
+  }, [loading, hasCheckedOrgs, organizations, rawOrganizationIds, user, navigate, redirectingToCreate]);
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -269,6 +276,28 @@ const TeamMembers = () => {
       navigate(`/team/${id}`);
     }
   };
+
+  if (loading && !hasCheckedOrgs) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-t-blue-500 border-gray-200 rounded-full mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading team information...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (redirectingToCreate) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-t-blue-500 border-gray-200 rounded-full mx-auto"></div>
+          <p className="mt-4 text-gray-600">Setting up your organization...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">

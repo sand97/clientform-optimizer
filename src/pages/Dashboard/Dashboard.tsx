@@ -43,6 +43,8 @@ const Dashboard = () => {
   const [templates, setTemplates] = useState<Template[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [hasCheckedOrgs, setHasCheckedOrgs] = useState(false);
+  const [rawOrganizationIds, setRawOrganizationIds] = useState<string[]>([]);
+  const [redirectingToCreate, setRedirectingToCreate] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -73,6 +75,9 @@ const Dashboard = () => {
         if (error) throw error;
 
         console.log('Raw organization data:', data);
+        
+        const allOrgIds = data.map(item => item.organization_id).filter(Boolean);
+        setRawOrganizationIds(allOrgIds);
         
         const orgs = data
           .filter(item => item.organizations && item.organizations.id && item.organizations.name)
@@ -311,14 +316,42 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    if (!loading && hasCheckedOrgs && organizations.length === 0 && user) {
+    if (!loading && 
+        hasCheckedOrgs && 
+        organizations.length === 0 && 
+        rawOrganizationIds.length === 0 && 
+        user && 
+        !redirectingToCreate) {
       console.log('No organizations found, redirecting to create organization');
+      setRedirectingToCreate(true);
       navigate('/organizations/create');
     }
-  }, [loading, hasCheckedOrgs, organizations, user, navigate]);
+  }, [loading, hasCheckedOrgs, organizations, rawOrganizationIds, user, navigate, redirectingToCreate]);
 
   if (!user) {
     return null; // Will be redirected by the auth check
+  }
+
+  if (loading && !hasCheckedOrgs) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-t-blue-500 border-gray-200 rounded-full mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (redirectingToCreate) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-t-blue-500 border-gray-200 rounded-full mx-auto"></div>
+          <p className="mt-4 text-gray-600">Setting up your organization...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
