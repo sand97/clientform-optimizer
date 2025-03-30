@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
@@ -35,6 +35,7 @@ const CreateOrganization = () => {
   const { toast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCheckingOrganizations, setIsCheckingOrganizations] = useState(true);
 
   const form = useForm<OrganizationFormValues>({
     resolver: zodResolver(organizationSchema),
@@ -42,6 +43,34 @@ const CreateOrganization = () => {
       name: '',
     },
   });
+
+  useEffect(() => {
+    const checkExistingOrganizations = async () => {
+      if (!user) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from('organization_members')
+          .select('organization_id')
+          .eq('user_id', user.id);
+          
+        if (error) throw error;
+        
+        console.log('CreateOrg - Checking organization membership:', data);
+        
+        if (data && data.length > 0) {
+          navigate('/dashboard');
+          return;
+        }
+      } catch (error) {
+        console.error('Error checking organizations:', error);
+      } finally {
+        setIsCheckingOrganizations(false);
+      }
+    };
+    
+    checkExistingOrganizations();
+  }, [user, navigate]);
 
   const onSubmit = async (data: OrganizationFormValues) => {
     if (!user) {
@@ -110,6 +139,17 @@ const CreateOrganization = () => {
       });
     }
   };
+
+  if (isCheckingOrganizations) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">
+        <div className="text-center">
+          <div className="animate-spin h-8 w-8 border-4 border-t-blue-500 border-gray-200 rounded-full mx-auto"></div>
+          <p className="mt-4 text-gray-600">Checking organization status...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-50 px-4">

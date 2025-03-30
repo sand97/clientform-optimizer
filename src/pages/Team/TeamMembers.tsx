@@ -23,6 +23,7 @@ const TeamMembers = () => {
   const { toast } = useToast();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [rawOrganizationIds, setRawOrganizationIds] = useState<string[]>([]);
   const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
@@ -63,6 +64,9 @@ const TeamMembers = () => {
 
         console.log('TeamMembers - Raw organization data:', data);
         
+        const orgIds = data.map(item => item.organization_id).filter(Boolean);
+        setRawOrganizationIds(orgIds);
+        
         const orgs = data
           .filter(item => item.organizations && item.organizations.id && item.organizations.name)
           .map(item => item.organizations) as Organization[];
@@ -100,11 +104,11 @@ const TeamMembers = () => {
   }, [user, toast, organizationId, navigate]);
 
   useEffect(() => {
-    if (!loading && hasCheckedOrgs && organizations.length === 0 && user) {
+    if (!loading && hasCheckedOrgs && organizations.length === 0 && rawOrganizationIds.length === 0 && user) {
       console.log('No organizations found in TeamMembers, redirecting to create organization');
       navigate('/organizations/create');
     }
-  }, [loading, hasCheckedOrgs, organizations, user, navigate]);
+  }, [loading, hasCheckedOrgs, organizations, rawOrganizationIds, user, navigate]);
 
   useEffect(() => {
     const fetchMembers = async () => {
