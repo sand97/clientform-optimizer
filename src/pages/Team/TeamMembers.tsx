@@ -1,30 +1,37 @@
 
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
 import { TeamMember } from '@/types/forms';
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-  CardFooter,
-} from "@/components/ui/card";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+// UI Components
+import { PageHeader } from '@/components/ui/page-header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Table, TableBody, TableCaption, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Label } from '@/components/ui/label';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import {
   Select,
   SelectContent,
@@ -32,416 +39,503 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, Check, Copy, Plus, UserPlus, X } from 'lucide-react';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ArrowLeft, UserPlus2, X, Mail, CheckCircle, AlertCircle } from 'lucide-react';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import OrganizationSelector from '@/components/layout/OrganizationSelector';
+
+interface Organization {
+  id: string;
+  name: string;
+  created_at: string;
+}
 
 const TeamMembers = () => {
-  const { organizationId } = useParams<{ organizationId?: string }>();
   const { user } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const { toast } = useToast();
+  const { organizationId } = useParams<{ organizationId: string }>();
   
+  const [isLoading, setIsLoading] = useState(true);
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [organizations, setOrganizations] = useState<Organization[]>([]);
+  const [currentOrganization, setCurrentOrganization] = useState<Organization | null>(null);
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState('member');
-  const [copied, setCopied] = useState(false);
-  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string | null>(null);
-  const [userOrganizations, setUserOrganizations] = useState<{id: string, name: string}[]>([]);
-  const [userProfile, setUserProfile] = useState<{ name: string, surname: string, email: string } | null>(null);
+  const [isRemoveDialogOpen, setIsRemoveDialogOpen] = useState(false);
+  const [memberToRemove, setMemberToRemove] = useState<TeamMember | null>(null);
+  const [isCurrentUserAdmin, setIsCurrentUserAdmin] = useState(false);
 
-  // Fetch user's organizations if no organizationId is provided
+  // Load organizations and set current one
   useEffect(() => {
-    const fetchUserOrganizations = async () => {
+    const fetchOrganizations = async () => {
       if (!user) return;
-      
+
       try {
         const { data, error } = await supabase
           .from('organization_members')
-          .select('organization_id')
+          .select(`
+            organization_id,
+            organizations:organization_id(id, name, created_at)
+          `)
           .eq('user_id', user.id);
-          
-        if (error) throw error;
-        
-        if (data && data.length > 0) {
-          // Get organization details
-          const orgIds = data.map(item => item.organization_id);
-          const { data: orgsData, error: orgsError } = await supabase
-            .from('organizations')
-            .select('id, name')
-            .in('id', orgIds);
-            
-          if (orgsError) throw orgsError;
-          
-          setUserOrganizations(orgsData || []);
-          
-          // If no organizationId was provided in the URL, use the first one
-          if (!organizationId && orgsData && orgsData.length > 0) {
-            setSelectedOrganizationId(orgsData[0].id);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching user organizations:', error);
-      }
-    };
-    
-    if (!organizationId) {
-      fetchUserOrganizations();
-    } else {
-      setSelectedOrganizationId(organizationId);
-    }
-  }, [user, organizationId]);
 
-  // Fetch team members
-  useEffect(() => {
-    const fetchMembers = async () => {
-      if (!selectedOrganizationId) return;
-      
-      try {
-        setLoading(true);
-        
-        // Query the organization_members_with_users view to get member details
-        const { data, error } = await supabase
-          .from('organization_members_with_users')
-          .select('*')
-          .eq('organization_id', selectedOrganizationId);
-          
         if (error) throw error;
 
-        setMembers(data || []);
+        const orgs = data.map(item => item.organizations) as Organization[];
+        setOrganizations(orgs);
         
-        // Check if current user is admin
-        const memberRecord = data?.find(m => m.user_id === user?.id);
-        if (memberRecord && ['owner', 'admin'].includes(memberRecord.role)) {
-          setIsAdmin(true);
-        }
-
-        // Fetch current user's profile
-        if (user) {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('name, surname')
-            .eq('id', user.id)
-            .single();
-            
-          if (!profileError && profileData) {
-            setUserProfile({
-              name: profileData.name || '',
-              surname: profileData.surname || '',
-              email: user.email || '',
-            });
+        // If organizationId is provided in URL, use that, otherwise use first org
+        if (organizationId) {
+          const selectedOrg = orgs.find(org => org.id === organizationId);
+          if (selectedOrg) {
+            setCurrentOrganization(selectedOrg);
+          } else if (orgs.length > 0) {
+            // Redirect to first org if specified org not found
+            navigate(`/team/${orgs[0].id}`);
           }
+        } else if (orgs.length > 0) {
+          setCurrentOrganization(orgs[0]);
+          navigate(`/team/${orgs[0].id}`);
         }
       } catch (error: any) {
-        console.error('Error loading members:', error);
         toast({
-          title: "Error",
-          description: "Failed to load team members",
+          title: "Error loading organizations",
+          description: error.message,
           variant: "destructive",
         });
       } finally {
-        setLoading(false);
+        setIsLoading(false);
       }
     };
-    
-    if (selectedOrganizationId) {
-      fetchMembers();
-    }
-  }, [selectedOrganizationId, user, toast]);
 
-  const handleInvite = async () => {
-    if (!selectedOrganizationId || !inviteEmail || !inviteRole) return;
+    fetchOrganizations();
+  }, [user, navigate, organizationId, toast]);
+
+  // Load team members for the current organization
+  useEffect(() => {
+    const fetchMembers = async () => {
+      if (!currentOrganization) return;
+
+      try {
+        setIsLoading(true);
+        
+        // Get current user's role
+        const { data: userRoleData, error: userRoleError } = await supabase
+          .from('organization_members')
+          .select('role')
+          .eq('organization_id', currentOrganization.id)
+          .eq('user_id', user?.id || '')
+          .single();
+        
+        if (userRoleError) throw userRoleError;
+        
+        setIsCurrentUserAdmin(
+          userRoleData?.role === 'admin' || 
+          userRoleData?.role === 'owner'
+        );
+        
+        // Get all members
+        const { data, error } = await supabase
+          .from('organization_members')
+          .select(`
+            id,
+            user_id,
+            role,
+            created_at,
+            organization_id,
+            users:user_id(
+              email,
+              raw_user_meta_data
+            )
+          `)
+          .eq('organization_id', currentOrganization.id);
+
+        if (error) throw error;
+
+        // Map the results to match TeamMember type
+        const mappedMembers: TeamMember[] = data.map(item => ({
+          id: item.id,
+          organization_id: item.organization_id,
+          user_id: item.user_id,
+          role: item.role,
+          created_at: item.created_at,
+          email: item.users?.email || '',
+          raw_user_meta_data: item.users?.raw_user_meta_data
+        }));
+
+        setMembers(mappedMembers);
+      } catch (error: any) {
+        toast({
+          title: "Error loading team members",
+          description: error.message,
+          variant: "destructive",
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchMembers();
+  }, [currentOrganization, user, toast]);
+
+  const handleSelectOrganization = (id: string) => {
+    navigate(`/team/${id}`);
+  };
+
+  const handleCreateOrganization = () => {
+    navigate('/organizations/create');
+  };
+
+  // Invite form schema
+  const inviteFormSchema = z.object({
+    email: z.string().email({ message: "Please enter a valid email address" }),
+    role: z.enum(["member", "admin"], {
+      required_error: "Please select a role",
+    }),
+  });
+
+  const inviteForm = useForm<z.infer<typeof inviteFormSchema>>({
+    resolver: zodResolver(inviteFormSchema),
+    defaultValues: {
+      email: "",
+      role: "member",
+    },
+  });
+
+  const onInviteSubmit = async (values: z.infer<typeof inviteFormSchema>) => {
+    if (!currentOrganization || !user) return;
 
     try {
-      const { error } = await supabase.functions.invoke('invite-to-organization', {
-        body: {
-          email: inviteEmail,
-          organization_id: selectedOrganizationId,
-          role: inviteRole,
-        },
-      });
+      // Check if the user is already a member
+      const { data: existingMember, error: checkError } = await supabase
+        .from('organization_members')
+        .select('id')
+        .eq('organization_id', currentOrganization.id)
+        .eq('email', values.email)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error inviting member:', error);
+      if (checkError) throw checkError;
+
+      if (existingMember) {
         toast({
-          title: "Error",
-          description: "Failed to invite member",
+          title: "User already a member",
+          description: "This user is already a member of this organization.",
           variant: "destructive",
         });
         return;
       }
 
+      // Check if there's already a pending invitation
+      const { data: existingInvite, error: inviteCheckError } = await supabase
+        .from('invitations')
+        .select('id, status')
+        .eq('organization_id', currentOrganization.id)
+        .eq('email', values.email)
+        .eq('status', 'pending')
+        .maybeSingle();
+
+      if (inviteCheckError) throw inviteCheckError;
+
+      if (existingInvite) {
+        toast({
+          title: "Invitation already sent",
+          description: "There is already a pending invitation for this email.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // Create invitation
+      const { error: createError } = await supabase
+        .from('invitations')
+        .insert({
+          organization_id: currentOrganization.id,
+          email: values.email,
+          role: values.role,
+          invited_by: user.id,
+        });
+
+      if (createError) throw createError;
+
       toast({
-        title: "Success",
-        description: "Invitation sent successfully",
+        title: "Invitation sent",
+        description: `An invitation has been sent to ${values.email}.`,
       });
+
       setIsInviteModalOpen(false);
-    } catch (error) {
-      console.error('Error inviting member:', error);
+      inviteForm.reset();
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "Failed to invite member",
+        title: "Error sending invitation",
+        description: error.message,
         variant: "destructive",
       });
     }
   };
 
-  const handleRemove = async (memberId: string) => {
-    if (!selectedOrganizationId) return;
+  const handleRemoveMember = async () => {
+    if (!memberToRemove || !currentOrganization) return;
 
     try {
       const { error } = await supabase
         .from('organization_members')
         .delete()
-        .eq('organization_id', selectedOrganizationId)
-        .eq('user_id', memberId);
+        .eq('id', memberToRemove.id)
+        .eq('organization_id', currentOrganization.id);
 
       if (error) throw error;
 
+      setMembers(members.filter(member => member.id !== memberToRemove.id));
       toast({
-        title: "Success",
-        description: "Member removed successfully",
+        title: "Member removed",
+        description: "The team member has been removed from the organization.",
       });
-      setMembers(members.filter(member => member.user_id !== memberId));
-    } catch (error) {
-      console.error('Error removing member:', error);
+    } catch (error: any) {
       toast({
-        title: "Error",
-        description: "Failed to remove member",
+        title: "Error removing member",
+        description: error.message,
         variant: "destructive",
       });
+    } finally {
+      setIsRemoveDialogOpen(false);
+      setMemberToRemove(null);
     }
   };
 
-  const handleShare = () => {
-    if (!selectedOrganizationId) return;
+  const confirmRemoveMember = (member: TeamMember) => {
+    setMemberToRemove(member);
+    setIsRemoveDialogOpen(true);
+  };
+
+  // Get the user's first and last name from raw_user_meta_data
+  const getUserName = (member: TeamMember): string => {
+    if (!member.raw_user_meta_data) return '';
     
-    const baseUrl = window.location.origin;
-    const url = `${baseUrl}/join/${selectedOrganizationId}`;
-    navigator.clipboard.writeText(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-    toast({
-      title: "Success",
-      description: "URL copied to clipboard",
-    });
+    const firstName = member.raw_user_meta_data.first_name || 
+                     member.raw_user_meta_data.given_name || 
+                     member.raw_user_meta_data.name?.split(' ')[0] || '';
+                     
+    const lastName = member.raw_user_meta_data.last_name || 
+                    member.raw_user_meta_data.family_name || 
+                    (member.raw_user_meta_data.name?.split(' ').slice(1).join(' ') || '');
+    
+    if (firstName || lastName) {
+      return `${firstName} ${lastName}`.trim();
+    }
+    
+    // If no name found, use the first part of the email
+    return member.email.split('@')[0];
   };
 
-  // Get display name from user ID - simplified version
-  const getDisplayName = (member: TeamMember) => {
-    // Just display the first 8 characters of the user ID as a placeholder
-    // Since we don't have access to the user's name directly
-    return `User ${member.user_id.substring(0, 8)}...`;
+  // Get initials for avatar
+  const getInitials = (member: TeamMember): string => {
+    const name = getUserName(member);
+    if (!name) return member.email.substring(0, 2).toUpperCase();
+    
+    const parts = name.split(' ');
+    if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
   };
-
-  // If no organization is selected yet and we're loading orgs, show loading
-  if (!selectedOrganizationId && userOrganizations.length === 0) {
-    return <p>Loading organizations...</p>;
-  }
-
-  // If we have organizations but none selected, show a selector
-  if (!selectedOrganizationId && userOrganizations.length > 0) {
-    return (
-      <div className="max-w-3xl mx-auto px-4 py-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Select an Organization</CardTitle>
-            <CardDescription>
-              Please select an organization to view team members
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {userOrganizations.map(org => (
-                <Button 
-                  key={org.id} 
-                  variant="outline" 
-                  className="w-full text-left justify-start h-auto py-3"
-                  onClick={() => navigate(`/team/${org.id}`)}
-                >
-                  <div>
-                    <div className="font-medium">{org.name}</div>
-                    <div className="text-sm text-gray-500">View team members</div>
-                  </div>
-                </Button>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (loading) {
-    return <p>Loading team members...</p>;
-  }
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-8">
-      <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-6">
-        <ArrowLeft className="mr-2 h-4 w-4" />
-        Back to Dashboard
-      </Button>
+    <div className="container mx-auto py-10">
+      <div className="mb-6 flex items-center justify-between">
+        <div className="flex items-center">
+          <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mr-4">
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Dashboard
+          </Button>
+          
+          {organizations.length > 0 && (
+            <OrganizationSelector
+              organizations={organizations}
+              currentOrganization={currentOrganization}
+              onSelectOrganization={handleSelectOrganization}
+              onCreate={handleCreateOrganization}
+            />
+          )}
+        </div>
+        
+        {isCurrentUserAdmin && (
+          <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
+            <DialogTrigger asChild>
+              <Button>
+                <UserPlus2 className="mr-2 h-4 w-4" />
+                Invite Member
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Invite Team Member</DialogTitle>
+                <DialogDescription>
+                  Send an invitation to join your organization.
+                </DialogDescription>
+              </DialogHeader>
+              
+              <Form {...inviteForm}>
+                <form onSubmit={inviteForm.handleSubmit(onInviteSubmit)} className="space-y-4">
+                  <FormField
+                    control={inviteForm.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email address</FormLabel>
+                        <FormControl>
+                          <Input placeholder="email@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <FormField
+                    control={inviteForm.control}
+                    name="role"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Role</FormLabel>
+                        <Select 
+                          onValueChange={field.onChange} 
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a role" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="member">Team Member</SelectItem>
+                            <SelectItem value="admin">Administrator</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormDescription>
+                          Administrators can manage team members and organization settings.
+                        </FormDescription>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  
+                  <DialogFooter>
+                    <Button type="submit">Send Invitation</Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
       
-      <Card>
+      <PageHeader 
+        heading={currentOrganization ? `${currentOrganization.name} Team` : "Team Members"} 
+        text="Manage your organization's team members and permissions."
+      />
+      
+      <Card className="mt-6">
         <CardHeader>
           <CardTitle>Team Members</CardTitle>
           <CardDescription>
-            Manage your team members and their roles within the organization
+            People who have access to this organization.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="mb-4 flex justify-between items-center">
-            <div>
-              <h3 className="text-lg font-semibold">Current Members</h3>
-              <p className="text-sm text-gray-500">
-                {members.length} members
-              </p>
+          {isLoading ? (
+            <div className="flex justify-center py-8">
+              <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-gray-900"></div>
             </div>
-            {isAdmin && (
-              <div className="flex space-x-2">
-                <Button variant="outline" size="sm" onClick={handleShare}>
-                  {copied ? (
-                    <Check className="h-4 w-4 mr-2" />
-                  ) : (
-                    <Copy className="h-4 w-4 mr-2" />
-                  )}
-                  Copy Invite Link
+          ) : members.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-500">No team members found.</p>
+              {isCurrentUserAdmin && (
+                <Button 
+                  variant="outline" 
+                  className="mt-4"
+                  onClick={() => setIsInviteModalOpen(true)}
+                >
+                  <UserPlus2 className="mr-2 h-4 w-4" />
+                  Invite Your First Team Member
                 </Button>
-                <Dialog open={isInviteModalOpen} onOpenChange={setIsInviteModalOpen}>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      <UserPlus className="h-4 w-4 mr-2" />
-                      Invite Member
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                      <DialogTitle>Invite New Member</DialogTitle>
-                      <DialogDescription>
-                        Send an invitation to a new team member.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="grid gap-4 py-4">
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="email" className="text-right">
-                          Email
-                        </Label>
-                        <Input
-                          id="email"
-                          value={inviteEmail}
-                          onChange={(e) => setInviteEmail(e.target.value)}
-                          className="col-span-3"
-                          type="email"
-                        />
-                      </div>
-                      <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="role" className="text-right">
-                          Role
-                        </Label>
-                        <Select value={inviteRole} onValueChange={setInviteRole}>
-                          <SelectTrigger className="col-span-3">
-                            <SelectValue placeholder="Select a role" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="member">Member</SelectItem>
-                            <SelectItem value="admin">Admin</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                    </div>
-                    <Button type="submit" onClick={handleInvite}>
-                      Send Invitation
-                    </Button>
-                  </DialogContent>
-                </Dialog>
-              </div>
-            )}
-          </div>
-          
-          {members.length === 0 ? (
-            <div className="text-center text-gray-500">
-              No members found
+              )}
             </div>
           ) : (
             <Table>
               <TableHeader>
                 <TableRow>
                   <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
                   <TableHead>Role</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>Status</TableHead>
+                  {isCurrentUserAdmin && <TableHead>Actions</TableHead>}
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {members.map((member) => (
-                  <TableRow key={member.user_id}>
-                    <TableCell className="font-medium">
+                  <TableRow key={member.id}>
+                    <TableCell>
                       <div className="flex items-center space-x-3">
                         <Avatar>
-                          <AvatarImage src={`https://avatar.vercel.sh/${member.user_id}.png`} />
-                          <AvatarFallback>
-                            {member.name && member.surname
-                              ? `${member.name.charAt(0)}${member.surname.charAt(0)}`
-                              : member.user_id.substring(0, 2).toUpperCase()}
-                          </AvatarFallback>
+                          <AvatarFallback>{getInitials(member)}</AvatarFallback>
                         </Avatar>
                         <div>
-                          {member.name && member.surname 
-                            ? `${member.name} ${member.surname}`
-                            : `User ${member.user_id.substring(0, 8)}...`}
+                          <div className="font-medium">{getUserName(member)}</div>
+                          <div className="text-sm text-muted-foreground">{member.email}</div>
                         </div>
                       </div>
                     </TableCell>
-                    <TableCell>{member.email}</TableCell>
                     <TableCell>
-                      <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                        {member.role}
-                      </span>
+                      <div className="capitalize">{member.role}</div>
                     </TableCell>
-                    <TableCell className="text-right">
-                      {isAdmin && member.user_id !== user?.id && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemove(member.user_id)}
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
+                    <TableCell>
+                      <div className="flex items-center">
+                        <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
+                        <span>Active</span>
+                      </div>
                     </TableCell>
+                    {isCurrentUserAdmin && (
+                      <TableCell>
+                        {member.user_id !== user?.id && (
+                          <Button 
+                            variant="ghost" 
+                            size="icon"
+                            className="text-red-500 hover:text-red-700 hover:bg-red-50"
+                            onClick={() => confirmRemoveMember(member)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </TableCell>
+                    )}
                   </TableRow>
                 ))}
               </TableBody>
+              <TableCaption>
+                {members.length} team {members.length === 1 ? 'member' : 'members'} in total.
+              </TableCaption>
             </Table>
           )}
         </CardContent>
-        
-        {userProfile && (
-          <CardFooter className="border-t pt-6 flex flex-col items-start">
-            <h4 className="text-sm font-semibold mb-2">Your Profile</h4>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full text-sm">
-              <div>
-                <span className="text-gray-500 block">Name</span>
-                <span>{userProfile.name} {userProfile.surname}</span>
-              </div>
-              <div className="md:col-span-2">
-                <span className="text-gray-500 block">Email</span>
-                <span>{userProfile.email}</span>
-              </div>
-            </div>
-          </CardFooter>
-        )}
       </Card>
+      
+      {/* Member Removal Confirmation Dialog */}
+      <AlertDialog open={isRemoveDialogOpen} onOpenChange={setIsRemoveDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Team Member</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to remove this team member from your organization?
+              This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRemoveMember} className="bg-red-500 hover:bg-red-600">
+              Remove
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
