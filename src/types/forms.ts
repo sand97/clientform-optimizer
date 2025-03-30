@@ -59,5 +59,9 @@ export interface TeamMember {
   role: string;
   created_at: string;
   email: string;
-  raw_user_meta_data?: any;
+  raw_user_meta_data?: {
+    name?: string;
+    avatar_url?: string;
+    [key: string]: any;
+  };
 }
