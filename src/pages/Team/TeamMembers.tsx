@@ -28,7 +28,8 @@ const TeamMembers = () => {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [memberToDelete, setMemberToDelete] = useState<TeamMember | null>(null);
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [hasCheckedOrgs, setHasCheckedOrgs] = useState(false);
 
   const inviteFormSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email address" }),
@@ -60,12 +61,15 @@ const TeamMembers = () => {
 
         if (error) throw error;
 
+        console.log('TeamMembers - Raw organization data:', data);
+        
         const orgs = data
           .filter(item => item.organizations && item.organizations.id && item.organizations.name)
           .map(item => item.organizations) as Organization[];
         
-        console.log('Filtered organizations:', orgs);
+        console.log('TeamMembers - Filtered organizations:', orgs);
         setOrganizations(orgs);
+        setHasCheckedOrgs(true);
         
         if (organizationId) {
           const selectedOrg = orgs.find(org => org.id === organizationId);
@@ -78,8 +82,6 @@ const TeamMembers = () => {
         } else if (orgs.length > 0) {
           setCurrentOrganization(orgs[0]);
           navigate(`/team/${orgs[0].id}`);
-        } else {
-          navigate('/organizations/create');
         }
       } catch (error: any) {
         console.error('Error fetching organizations:', error);
@@ -88,11 +90,21 @@ const TeamMembers = () => {
           description: "Failed to load organizations",
           variant: "destructive",
         });
+        setHasCheckedOrgs(true);
+      } finally {
+        setLoading(false);
       }
     };
 
     fetchOrganizations();
   }, [user, toast, organizationId, navigate]);
+
+  useEffect(() => {
+    if (!loading && hasCheckedOrgs && organizations.length === 0 && user) {
+      console.log('No organizations found in TeamMembers, redirecting to create organization');
+      navigate('/organizations/create');
+    }
+  }, [loading, hasCheckedOrgs, organizations, user, navigate]);
 
   useEffect(() => {
     const fetchMembers = async () => {

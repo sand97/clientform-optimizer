@@ -42,6 +42,7 @@ const Dashboard = () => {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
+  const [hasCheckedOrgs, setHasCheckedOrgs] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -71,6 +72,8 @@ const Dashboard = () => {
 
         if (error) throw error;
 
+        console.log('Raw organization data:', data);
+        
         const orgs = data
           .filter(item => item.organizations && item.organizations.id && item.organizations.name)
           .map(item => item.organizations) as Organization[];
@@ -81,12 +84,16 @@ const Dashboard = () => {
         if (orgs.length > 0 && !currentOrganization) {
           setCurrentOrganization(orgs[0]);
         }
+        
+        setHasCheckedOrgs(true);
       } catch (error: any) {
+        console.error('Dashboard - Error fetching organizations:', error);
         toast({
           title: "Error fetching organizations",
           description: error.message,
           variant: "destructive",
         });
+        setHasCheckedOrgs(true);
       } finally {
         setLoading(false);
       }
@@ -304,10 +311,11 @@ const Dashboard = () => {
   };
 
   useEffect(() => {
-    if (!loading && organizations.length === 0 && user) {
+    if (!loading && hasCheckedOrgs && organizations.length === 0 && user) {
+      console.log('No organizations found, redirecting to create organization');
       navigate('/organizations/create');
     }
-  }, [loading, organizations, user, navigate]);
+  }, [loading, hasCheckedOrgs, organizations, user, navigate]);
 
   if (!user) {
     return null; // Will be redirected by the auth check
