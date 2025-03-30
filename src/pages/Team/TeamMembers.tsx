@@ -32,6 +32,7 @@ const TeamMembers = () => {
   const [loading, setLoading] = useState(true);
   const [hasCheckedOrgs, setHasCheckedOrgs] = useState(false);
   const [redirectingToCreate, setRedirectingToCreate] = useState(false);
+  const [permissionError, setPermissionError] = useState(false);
 
   const inviteFormSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email address" }),
@@ -53,6 +54,8 @@ const TeamMembers = () => {
       if (!user) return;
 
       try {
+        setPermissionError(false);
+        
         const { data, error } = await supabase
           .from('organization_members')
           .select(`
@@ -61,16 +64,35 @@ const TeamMembers = () => {
           `)
           .eq('user_id', user.id);
 
-        if (error) throw error;
+        if (error) {
+          console.error('TeamMembers - Error fetching organizations:', error);
+          if (error.code === 'PGRST301' || error.message.includes('permission denied')) {
+            setPermissionError(true);
+            toast({
+              title: "Permission error",
+              description: "You don't have permission to view these organizations. Please contact an administrator.",
+              variant: "destructive",
+            });
+          } else {
+            toast({
+              title: "Error",
+              description: "Failed to load organizations",
+              variant: "destructive",
+            });
+          }
+          setHasCheckedOrgs(true);
+          setLoading(false);
+          return;
+        }
 
         console.log('TeamMembers - Raw organization data:', data);
         
-        const orgIds = data.map(item => item.organization_id).filter(Boolean);
+        const orgIds = data?.map(item => item.organization_id).filter(Boolean) || [];
         setRawOrganizationIds(orgIds);
         
         const orgs = data
-          .filter(item => item.organizations && item.organizations.id && item.organizations.name)
-          .map(item => item.organizations) as Organization[];
+          ?.filter(item => item.organizations && item.organizations.id && item.organizations.name)
+          .map(item => item.organizations) as Organization[] || [];
         
         console.log('TeamMembers - Filtered organizations:', orgs);
         setOrganizations(orgs);
@@ -100,7 +122,7 @@ const TeamMembers = () => {
         setLoading(false);
       }
     };
-
+    
     fetchOrganizations();
   }, [user, toast, organizationId, navigate]);
 
@@ -110,12 +132,13 @@ const TeamMembers = () => {
         organizations.length === 0 && 
         rawOrganizationIds.length === 0 && 
         user && 
-        !redirectingToCreate) {
+        !redirectingToCreate &&
+        !permissionError) {
       console.log('No organizations found in TeamMembers, redirecting to create organization');
       setRedirectingToCreate(true);
       navigate('/organizations/create');
     }
-  }, [loading, hasCheckedOrgs, organizations, rawOrganizationIds, user, navigate, redirectingToCreate]);
+  }, [loading, hasCheckedOrgs, organizations, rawOrganizationIds, user, navigate, redirectingToCreate, permissionError]);
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -209,15 +232,25 @@ const TeamMembers = () => {
           invited_by: user?.id,
         });
 
-      if (error) throw error;
+      if (error) {
+        if (error.code === 'PGRST301' || error.message.includes('permission denied')) {
+          toast({
+            title: "Permission error",
+            description: "You don't have permission to invite members to this organization.",
+            variant: "destructive",
+          });
+        } else {
+          throw error;
+        }
+      } else {
+        toast({
+          title: "Invitation sent",
+          description: `An invitation has been sent to ${formData.email}`,
+        });
 
-      toast({
-        title: "Invitation sent",
-        description: `An invitation has been sent to ${formData.email}`,
-      });
-
-      form.reset();
-      setIsDialogOpen(false);
+        form.reset();
+        setIsDialogOpen(false);
+      }
     } catch (error: any) {
       console.error('Error inviting member:', error);
       toast({
@@ -295,6 +328,28 @@ const TeamMembers = () => {
           <div className="animate-spin h-8 w-8 border-4 border-t-blue-500 border-gray-200 rounded-full mx-auto"></div>
           <p className="mt-4 text-gray-600">Setting up your organization...</p>
         </div>
+      </div>
+    );
+  }
+
+  if (permissionError) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <Card className="max-w-md w-full p-6">
+          <CardHeader className="space-y-1">
+            <CardTitle className="text-2xl font-bold text-center">Permission Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center space-y-4">
+              <p className="text-center text-gray-600">
+                You don't have permission to view these organizations. This might be due to Row Level Security restrictions.
+              </p>
+              <Button onClick={() => navigate('/organizations/create')} className="w-full">
+                Create New Organization
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
