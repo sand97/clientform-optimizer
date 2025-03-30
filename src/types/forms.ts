@@ -1,4 +1,3 @@
-
 export interface Field {
   id: string;
   name: string;
@@ -59,13 +58,5 @@ export interface TeamMember {
   role: string;
   created_at: string;
   email: string;
-  raw_user_meta_data?: {
-    name?: string;
-    avatar_url?: string;
-    first_name?: string;
-    last_name?: string;
-    given_name?: string;
-    family_name?: string;
-    [key: string]: any;
-  };
+  raw_user_meta_data: any; // Changed from specific structure to any to match Supabase's Json type
 }
