@@ -227,6 +227,7 @@ const TeamMembers = () => {
       // setLoading(true);
 
       setShowFeatureAlert(true);
+      setIsDialogOpen(false);
 
       // const { data, error } = await supabase
       //   .from('invitations')
