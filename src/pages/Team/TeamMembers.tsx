@@ -30,7 +30,6 @@ const TeamMembers = () => {
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(false);
 
-  
   const inviteFormSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email address" }),
     role: z.enum(["member", "admin", "owner"], {
@@ -62,9 +61,10 @@ const TeamMembers = () => {
         if (error) throw error;
 
         const orgs = data
-          .filter(item => item.organizations)
+          .filter(item => item.organizations && item.organizations.id && item.organizations.name)
           .map(item => item.organizations) as Organization[];
         
+        console.log('Filtered organizations:', orgs);
         setOrganizations(orgs);
         
         if (organizationId) {
@@ -73,9 +73,13 @@ const TeamMembers = () => {
             setCurrentOrganization(selectedOrg);
           } else if (orgs.length > 0) {
             setCurrentOrganization(orgs[0]);
+            navigate(`/team/${orgs[0].id}`);
           }
         } else if (orgs.length > 0) {
           setCurrentOrganization(orgs[0]);
+          navigate(`/team/${orgs[0].id}`);
+        } else {
+          navigate('/organizations/create');
         }
       } catch (error: any) {
         console.error('Error fetching organizations:', error);
@@ -88,7 +92,7 @@ const TeamMembers = () => {
     };
 
     fetchOrganizations();
-  }, [user, toast, organizationId]);
+  }, [user, toast, organizationId, navigate]);
 
   useEffect(() => {
     const fetchMembers = async () => {
@@ -97,7 +101,6 @@ const TeamMembers = () => {
       try {
         setLoading(true);
         
-        // Check user role
         const { data: userRoleData, error: userRoleError } = await supabase
           .from('organization_members')
           .select('role')
@@ -114,7 +117,6 @@ const TeamMembers = () => {
           userRoleData?.role === 'owner'
         );
         
-        // Get all members with organization name
         const { data, error } = await supabase
           .from('organization_members_with_users')
           .select(`
@@ -133,7 +135,6 @@ const TeamMembers = () => {
 
         console.log('Members data:', data);
 
-        // Map the results to include organization name without deep nesting
         const mappedMembers: TeamMember[] = data.map(member => ({
           id: member.id || '',
           organization_id: member.organization_id || '',
@@ -162,8 +163,6 @@ const TeamMembers = () => {
       fetchMembers();
     }
   }, [user, toast, currentOrganization]);
-
-  
 
   const onSubmit = async (formData: z.infer<typeof inviteFormSchema>) => {
     try {
@@ -254,8 +253,6 @@ const TeamMembers = () => {
       navigate(`/team/${id}`);
     }
   };
-
-  
 
   return (
     <div className="min-h-screen bg-gray-50">

@@ -23,6 +23,9 @@ const OrganizationSelector = ({
   onCreate
 }: OrganizationSelectorProps) => {
   const [isOrgPopoverOpen, setIsOrgPopoverOpen] = useState(false);
+  
+  // Filter out any null or invalid organizations
+  const validOrganizations = organizations.filter(org => org && org.id && org.name);
 
   return (
     <Popover open={isOrgPopoverOpen} onOpenChange={setIsOrgPopoverOpen}>
@@ -43,8 +46,8 @@ const OrganizationSelector = ({
             Your Organizations
           </h4>
           <div className="max-h-[300px] overflow-auto">
-            {organizations && organizations.length > 0 ? (
-              organizations.map((org) => org && (
+            {validOrganizations.length > 0 ? (
+              validOrganizations.map((org) => (
                 <Button
                   key={org.id}
                   variant="ghost"

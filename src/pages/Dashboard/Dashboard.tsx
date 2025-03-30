@@ -72,9 +72,10 @@ const Dashboard = () => {
         if (error) throw error;
 
         const orgs = data
-          .filter(item => item.organizations)
+          .filter(item => item.organizations && item.organizations.id && item.organizations.name)
           .map(item => item.organizations) as Organization[];
         
+        console.log('Dashboard - Filtered organizations:', orgs);
         setOrganizations(orgs);
         
         if (orgs.length > 0 && !currentOrganization) {
