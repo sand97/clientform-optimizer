@@ -1,12 +1,12 @@
-
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { formatDistanceToNow } from 'date-fns';
 import { ArrowLeft, Download, Eye } from 'lucide-react';
-import { PDFDocument } from 'pdf-lib';
 import { FormData, TemplateData, Field } from '@/types/forms';
 import { useNavigate } from 'react-router-dom';
+import { generateFilledPDF, PDFField } from '@/utils/pdfGenerator';
+import { useToast } from '@/hooks/use-toast';
 
 // UI Components
 import { PageHeader } from '@/components/ui/page-header';
@@ -33,8 +33,10 @@ interface Submission {
 
 export default function SubmissionsPage() {
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [selectedSubmission, setSelectedSubmission] = useState<Submission | null>(null);
   const [isViewModalOpen, setIsViewModalOpen] = useState(false);
+  const [isGeneratingPDF, setIsGeneratingPDF] = useState(false);
 
   const { data: submissions, isLoading, error } = useQuery({
     queryKey: ['submissions'],
@@ -56,13 +58,11 @@ export default function SubmissionsPage() {
       
       if (error) throw error;
       
-      // Parse the JSON strings into objects and include template information
       return data.map(item => ({
         ...item,
         form_data: typeof item.form_data === 'string' ? JSON.parse(item.form_data) : item.form_data,
         template_data: typeof item.template_data === 'string' ? JSON.parse(item.template_data) : item.template_data,
         field_values: typeof item.field_values === 'string' ? JSON.parse(item.field_values) : item.field_values,
-        // Add form name to templates if available
         templates: item.templates ? {
           ...item.templates,
           form_name: item.forms?.name
@@ -78,45 +78,51 @@ export default function SubmissionsPage() {
 
   const handleBuildDocument = async (submission: Submission) => {
     try {
-      // Step 1: Download the PDF template
-      const pdfResponse = await fetch(submission.template_data.pdf_url);
-      const pdfBytes = await pdfResponse.arrayBuffer();
+      setIsGeneratingPDF(true);
       
-      // Step 2: Load the PDF document
-      const pdfDoc = await PDFDocument.load(pdfBytes);
-      const form = pdfDoc.getForm();
+      const pdfFields: PDFField[] = [];
       
-      // Step 3: Fill the form fields based on positions from template
-      Object.entries(submission.template_data.positions).forEach(([fieldId, position]) => {
-        try {
-          // Get field value from submission
-          const fieldValue = submission.field_values[fieldId] || '';
-          
-          // Find the form field that matches the position
-          const fields = form.getFields();
-          // Implementation would depend on how fields are matched with positions
-          // This is a simplified example
-          
-          // For demonstration - you'd need to match fields based on your specific implementation
-          console.log(`Setting field ${fieldId} to value: ${fieldValue}`);
-        } catch (e) {
-          console.error(`Error filling field ${fieldId}:`, e);
+      Object.entries(submission.field_values).forEach(([fieldId, value]) => {
+        const position = submission.template_data.positions[fieldId];
+        
+        if (position) {
+          pdfFields.push({
+            id: fieldId,
+            value: String(value),
+            position: {
+              x: position.x,
+              y: position.y,
+              page: position.page || 0
+            }
+          });
         }
       });
       
-      // Step 4: Save and download the filled PDF
-      const filledPdfBytes = await pdfDoc.save();
+      const filledPdfBytes = await generateFilledPDF(
+        submission.template_data.pdf_url,
+        pdfFields
+      );
       
-      // Create a blob and download link
       const blob = new Blob([filledPdfBytes], { type: 'application/pdf' });
       const link = document.createElement('a');
       link.href = URL.createObjectURL(blob);
       link.download = `filled_${submission.template_data.original_pdf_name || 'document.pdf'}`;
       link.click();
       
+      toast({
+        title: "PDF Generated",
+        description: "Your filled PDF has been generated and downloaded.",
+      });
+      
     } catch (error) {
       console.error('Error generating filled PDF:', error);
-      alert('Failed to generate document. Please try again.');
+      toast({
+        title: "PDF Generation Failed",
+        description: "There was an error generating your PDF. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsGeneratingPDF(false);
     }
   };
 
@@ -193,6 +199,7 @@ export default function SubmissionsPage() {
                           variant="outline" 
                           size="sm"
                           onClick={() => handleBuildDocument(submission)}
+                          disabled={isGeneratingPDF}
                         >
                           <Download className="h-4 w-4 mr-1" /> Build PDF
                         </Button>
@@ -210,7 +217,6 @@ export default function SubmissionsPage() {
         </CardContent>
       </Card>
 
-      {/* View Submission Modal */}
       <Dialog open={isViewModalOpen} onOpenChange={setIsViewModalOpen}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
@@ -245,7 +251,6 @@ export default function SubmissionsPage() {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {Object.entries(selectedSubmission.field_values).map(([fieldId, value]) => {
-                      // Find the field definition from form_data
                       const fieldDef = selectedSubmission.form_data.fields?.find(
                         field => field.id === fieldId
                       );
@@ -265,8 +270,12 @@ export default function SubmissionsPage() {
 
               <div className="flex justify-end space-x-2">
                 <Button variant="outline" onClick={() => setIsViewModalOpen(false)}>Close</Button>
-                <Button onClick={() => handleBuildDocument(selectedSubmission)}>
+                <Button 
+                  onClick={() => handleBuildDocument(selectedSubmission)}
+                  disabled={isGeneratingPDF}
+                >
                   <Download className="h-4 w-4 mr-1" /> Generate PDF
+                  {isGeneratingPDF && <span className="ml-2">...</span>}
                 </Button>
               </div>
             </div>
