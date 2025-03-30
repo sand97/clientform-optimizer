@@ -142,41 +142,6 @@ const TeamMembers = () => {
     }
   }, [selectedOrganizationId, user, toast]);
 
-  // Fetch user profile information
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user) return;
-      
-      try {
-        // Fetch profile data
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('name, surname')
-          .eq('id', user.id)
-          .single();
-          
-        if (profileError) throw profileError;
-        
-        setUserProfile({
-          name: profileData?.name || '',
-          surname: profileData?.surname || '',
-          email: user.email || '',
-        });
-      } catch (error: any) {
-        console.error('Error loading user profile:', error);
-        toast({
-          title: "Error",
-          description: "Failed to load user profile",
-          variant: "destructive",
-        });
-      }
-    };
-    
-    if (user) {
-      fetchUserProfile();
-    }
-  }, [user, toast]);
-
   const handleInvite = async () => {
     if (!selectedOrganizationId || !inviteEmail || !inviteRole) return;
 
@@ -424,26 +389,6 @@ const TeamMembers = () => {
             </ul>
           )}
           
-          {/* User profile information card at the bottom */}
-          {userProfile && (
-            <Card className="mt-8">
-              <CardHeader>
-                <CardTitle>Your Profile</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  <div className="flex items-center">
-                    <span className="font-medium w-24">Name:</span>
-                    <span>{userProfile.name} {userProfile.surname}</span>
-                  </div>
-                  <div className="flex items-center">
-                    <span className="font-medium w-24">Email:</span>
-                    <span>{userProfile.email}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
         </CardContent>
       </Card>
     </div>
