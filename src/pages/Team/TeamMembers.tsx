@@ -10,12 +10,13 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import OrganizationSelector from '@/components/layout/OrganizationSelector';
 import { Organization, TeamMember } from '@/types/forms';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, Check, AlertTriangle, Info } from 'lucide-react';
 
 const TeamMembers = () => {
   const { user } = useAuth();
@@ -34,6 +35,7 @@ const TeamMembers = () => {
   const [hasCheckedOrgs, setHasCheckedOrgs] = useState(false);
   const [redirectingToCreate, setRedirectingToCreate] = useState(false);
   const [permissionError, setPermissionError] = useState(false);
+  const [showFeatureAlert, setShowFeatureAlert] = useState(false);
 
   const inviteFormSchema = z.object({
     email: z.string().email({ message: "Please enter a valid email address" }),
@@ -224,6 +226,8 @@ const TeamMembers = () => {
 
       setLoading(true);
 
+      setShowFeatureAlert(true);
+
       const { data, error } = await supabase
         .from('invitations')
         .insert({
@@ -245,8 +249,8 @@ const TeamMembers = () => {
         }
       } else {
         toast({
-          title: "Invitation sent",
-          description: `An invitation has been sent to ${formData.email}`,
+          title: "Invitation submitted",
+          description: `An invitation has been registered for ${formData.email}`,
         });
 
         form.reset();
@@ -375,6 +379,26 @@ const TeamMembers = () => {
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to Dashboard
         </Button>
+        
+        {showFeatureAlert && (
+          <Alert variant="success" className="mb-6">
+            <Check className="h-4 w-4" />
+            <AlertTitle>Feature Coming Soon</AlertTitle>
+            <AlertDescription>
+              Your invitation has been registered, but the invitation email feature is still in development. 
+              Soon, recipients will receive automated email invitations to join your organization.
+            </AlertDescription>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="absolute top-4 right-4 h-6 w-6 p-0" 
+              onClick={() => setShowFeatureAlert(false)}
+            >
+              <span className="sr-only">Close</span>
+              <Info className="h-4 w-4" />
+            </Button>
+          </Alert>
+        )}
         
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Team Members</h1>
