@@ -167,9 +167,9 @@ export default function SubmissionsPage() {
                   <TableRow key={submission.id}>
                     <TableCell className="font-medium">{submission.form_data.name}</TableCell>
                     <TableCell>
-                      {submission.templates ? 
-                        (submission.templates.original_pdf_name || 'Unnamed Template') : 
-                        'No Template'
+                      {submission.templates && submission.templates.original_pdf_name ? 
+                        submission.templates.original_pdf_name : 
+                        (submission.template_data.original_pdf_name || 'Unnamed Template')
                       }
                     </TableCell>
                     <TableCell>
@@ -230,7 +230,11 @@ export default function SubmissionsPage() {
                 </CardHeader>
                 <CardContent>
                   <p><strong>Form Name:</strong> {selectedSubmission.form_data.name}</p>
-                  <p><strong>Template:</strong> {selectedSubmission.template_data.original_pdf_name || 'Unnamed Template'}</p>
+                  <p><strong>Template:</strong> {
+                    selectedSubmission.templates?.original_pdf_name || 
+                    selectedSubmission.template_data.original_pdf_name || 
+                    'Unnamed Template'
+                  }</p>
                 </CardContent>
               </Card>
 
