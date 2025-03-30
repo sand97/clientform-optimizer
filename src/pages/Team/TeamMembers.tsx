@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -10,6 +11,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
+  CardFooter,
 } from "@/components/ui/card";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from '@/components/ui/button';
@@ -31,6 +33,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, Check, Copy, Plus, UserPlus, X } from 'lucide-react';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 const TeamMembers = () => {
   const { organizationId } = useParams<{ organizationId?: string }>();
@@ -99,31 +109,37 @@ const TeamMembers = () => {
       try {
         setLoading(true);
         
-        // Query the organization_members table directly (not the view)
+        // Query the organization_members_with_users view to get member details
         const { data, error } = await supabase
-          .from('organization_members')
+          .from('organization_members_with_users')
           .select('*')
           .eq('organization_id', selectedOrganizationId);
           
         if (error) throw error;
-        
-        // Transform the data to match our TeamMember type
-        const transformedMembers: TeamMember[] = data.map(member => ({
-          id: member.id || '',
-          organization_id: member.organization_id || '',
-          user_id: member.user_id || '',
-          role: member.role || '',
-          created_at: member.created_at || '',
-          email: member.user_id || '', // Use user_id as email placeholder
-          raw_user_meta_data: null
-        }));
 
-        setMembers(transformedMembers);
+        setMembers(data || []);
         
         // Check if current user is admin
-        const memberRecord = transformedMembers.find(m => m.user_id === user?.id);
+        const memberRecord = data?.find(m => m.user_id === user?.id);
         if (memberRecord && ['owner', 'admin'].includes(memberRecord.role)) {
           setIsAdmin(true);
+        }
+
+        // Fetch current user's profile
+        if (user) {
+          const { data: profileData, error: profileError } = await supabase
+            .from('profiles')
+            .select('name, surname')
+            .eq('id', user.id)
+            .single();
+            
+          if (!profileError && profileData) {
+            setUserProfile({
+              name: profileData.name || '',
+              surname: profileData.surname || '',
+              email: user.email || '',
+            });
+          }
         }
       } catch (error: any) {
         console.error('Error loading members:', error);
@@ -351,45 +367,80 @@ const TeamMembers = () => {
               </div>
             )}
           </div>
+          
           {members.length === 0 ? (
             <div className="text-center text-gray-500">
               No members found
             </div>
           ) : (
-            <ul className="divide-y divide-gray-200">
-              {members.map((member) => (
-                <li key={member.user_id} className="py-4 flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <Avatar>
-                      <AvatarImage src={`https://avatar.vercel.sh/${member.user_id}.png`} />
-                      <AvatarFallback>{member.user_id.substring(0, 2).toUpperCase()}</AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium">{getDisplayName(member)}</p>
-                      <p className="text-gray-500 text-sm">{member.user_id}</p>
-                    </div>
-                  </div>
-                  <div>
-                    <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-800">
-                      {member.role}
-                    </span>
-                    {isAdmin && member.user_id !== user?.id && (
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="ml-2"
-                        onClick={() => handleRemove(member.user_id)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Email</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {members.map((member) => (
+                  <TableRow key={member.user_id}>
+                    <TableCell className="font-medium">
+                      <div className="flex items-center space-x-3">
+                        <Avatar>
+                          <AvatarImage src={`https://avatar.vercel.sh/${member.user_id}.png`} />
+                          <AvatarFallback>
+                            {member.name && member.surname
+                              ? `${member.name.charAt(0)}${member.surname.charAt(0)}`
+                              : member.user_id.substring(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          {member.name && member.surname 
+                            ? `${member.name} ${member.surname}`
+                            : `User ${member.user_id.substring(0, 8)}...`}
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>{member.email}</TableCell>
+                    <TableCell>
+                      <span className="inline-flex items-center rounded-full bg-blue-50 px-2.5 py-0.5 text-xs font-medium text-blue-800">
+                        {member.role}
+                      </span>
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {isAdmin && member.user_id !== user?.id && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemove(member.user_id)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           )}
-          
         </CardContent>
+        
+        {userProfile && (
+          <CardFooter className="border-t pt-6 flex flex-col items-start">
+            <h4 className="text-sm font-semibold mb-2">Your Profile</h4>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 w-full text-sm">
+              <div>
+                <span className="text-gray-500 block">Name</span>
+                <span>{userProfile.name} {userProfile.surname}</span>
+              </div>
+              <div className="md:col-span-2">
+                <span className="text-gray-500 block">Email</span>
+                <span>{userProfile.email}</span>
+              </div>
+            </div>
+          </CardFooter>
+        )}
       </Card>
     </div>
   );

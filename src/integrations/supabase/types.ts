@@ -324,9 +324,10 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string | null
+          name: string | null
           organization_id: string | null
-          raw_user_meta_data: Json | null
           role: string | null
+          surname: string | null
           user_id: string | null
         }
         Relationships: [
