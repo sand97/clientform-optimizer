@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -139,17 +138,15 @@ const TeamMembers = () => {
         
         // Get all members
         const { data, error } = await supabase
-          .from('organization_members')
+          .from('organization_members_with_users')
           .select(`
             id,
+            organization_id,
             user_id,
             role,
             created_at,
-            organization_id,
-            users:user_id(
-              email,
-              raw_user_meta_data
-            )
+            email,
+            raw_user_meta_data
           `)
           .eq('organization_id', currentOrganization.id);
 
@@ -157,13 +154,13 @@ const TeamMembers = () => {
 
         // Map the results to match TeamMember type
         const mappedMembers: TeamMember[] = data.map(item => ({
-          id: item.id,
-          organization_id: item.organization_id,
-          user_id: item.user_id,
-          role: item.role,
-          created_at: item.created_at,
-          email: item.users?.email || '',
-          raw_user_meta_data: item.users?.raw_user_meta_data
+          id: item.id || '',
+          organization_id: item.organization_id || '',
+          user_id: item.user_id || '',
+          role: item.role || '',
+          created_at: item.created_at || '',
+          email: item.email || '',
+          raw_user_meta_data: item.raw_user_meta_data
         }));
 
         setMembers(mappedMembers);

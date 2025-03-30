@@ -348,6 +348,13 @@ export type Database = {
         }
         Returns: undefined
       }
+      check_organization_membership: {
+        Args: {
+          user_uuid: string
+          org_uuid: string
+        }
+        Returns: boolean
+      }
       get_organization_members_with_users: {
         Args: Record<PropertyKey, never>
         Returns: {
@@ -387,13 +394,6 @@ export type Database = {
             }
             Returns: boolean
           }
-      is_organization_member_view: {
-        Args: {
-          user_id: string
-          org_id: string
-        }
-        Returns: boolean
-      }
     }
     Enums: {
       [_ in never]: never

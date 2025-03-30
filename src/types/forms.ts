@@ -62,6 +62,10 @@ export interface TeamMember {
   raw_user_meta_data?: {
     name?: string;
     avatar_url?: string;
+    first_name?: string;
+    last_name?: string;
+    given_name?: string;
+    family_name?: string;
     [key: string]: any;
   };
 }
