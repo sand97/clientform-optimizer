@@ -7,12 +7,7 @@ import {
 } from '@/components/ui/popover';
 import { Button } from '@/components/ui/button';
 import { ChevronDown } from 'lucide-react';
-
-interface Organization {
-  id: string;
-  name: string;
-  created_at: string;
-}
+import { Organization } from '@/types/forms';
 
 interface OrganizationSelectorProps {
   organizations: Organization[];
@@ -22,7 +17,7 @@ interface OrganizationSelectorProps {
 }
 
 const OrganizationSelector = ({ 
-  organizations, 
+  organizations = [], // Provide default empty array to prevent null/undefined errors 
   currentOrganization, 
   onSelectOrganization,
   onCreate
@@ -48,21 +43,25 @@ const OrganizationSelector = ({
             Your Organizations
           </h4>
           <div className="max-h-[300px] overflow-auto">
-            {organizations.map((org) => (
-              <Button
-                key={org.id}
-                variant="ghost"
-                className={`w-full justify-start text-left ${
-                  currentOrganization?.id === org.id ? 'bg-accent' : ''
-                }`}
-                onClick={() => {
-                  onSelectOrganization(org.id);
-                  setIsOrgPopoverOpen(false);
-                }}
-              >
-                <span className="truncate">{org.name}</span>
-              </Button>
-            ))}
+            {organizations && organizations.length > 0 ? (
+              organizations.map((org) => org && (
+                <Button
+                  key={org.id}
+                  variant="ghost"
+                  className={`w-full justify-start text-left ${
+                    currentOrganization?.id === org.id ? 'bg-accent' : ''
+                  }`}
+                  onClick={() => {
+                    onSelectOrganization(org.id);
+                    setIsOrgPopoverOpen(false);
+                  }}
+                >
+                  <span className="truncate">{org.name}</span>
+                </Button>
+              ))
+            ) : (
+              <div className="px-2 py-2 text-sm text-muted-foreground">No organizations found</div>
+            )}
           </div>
           <div className="pt-2 border-t">
             <Button 

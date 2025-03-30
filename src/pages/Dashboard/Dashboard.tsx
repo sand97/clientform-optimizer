@@ -8,7 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ArrowRight, BarChart, CheckCircle, FileCheck, FileText, FormInput, Plus, Send, Settings, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Template, TeamMember } from '@/types/forms';
+import { Organization, Template, TeamMember } from '@/types/forms';
 
 interface Organization {
   id: string;
@@ -77,7 +77,10 @@ const Dashboard = () => {
 
         if (error) throw error;
 
-        const orgs = data.map(item => item.organizations) as Organization[];
+        const orgs = data
+          .filter(item => item.organizations)
+          .map(item => item.organizations) as Organization[];
+        
         setOrganizations(orgs);
         
         if (orgs.length > 0 && !currentOrganization) {

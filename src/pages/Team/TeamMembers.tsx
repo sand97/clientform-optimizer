@@ -1,10 +1,9 @@
-
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { TeamMember } from '@/types/forms';
+import { TeamMember, Organization } from '@/types/forms';
 
 // UI Components
 import { PageHeader } from '@/components/ui/page-header';
@@ -84,15 +83,19 @@ const TeamMembers = () => {
 
         if (error) throw error;
 
-        const orgs = data.map(item => item.organizations) as Organization[];
+        // Filter out any null values before mapping
+        const orgs = data
+          .filter(item => item.organizations)
+          .map(item => item.organizations) as Organization[];
+          
         setOrganizations(orgs);
         
         // If organizationId is provided in URL, use that, otherwise use first org
-        if (organizationId) {
+        if (organizationId && orgs.length > 0) {
           const selectedOrg = orgs.find(org => org.id === organizationId);
           if (selectedOrg) {
             setCurrentOrganization(selectedOrg);
-          } else if (orgs.length > 0) {
+          } else {
             // Redirect to first org if specified org not found
             navigate(`/team/${orgs[0].id}`);
           }

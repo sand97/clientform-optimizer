@@ -1,3 +1,4 @@
+
 export interface Field {
   id: string;
   name: string;
@@ -11,6 +12,7 @@ export interface Field {
 export interface Organization {
   id: string;
   name: string;
+  created_at?: string;
 }
 
 export interface Position {
