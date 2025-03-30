@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -136,18 +137,10 @@ const TeamMembers = () => {
           userRoleData?.role === 'owner'
         );
         
-        // Get all members
+        // Get all members - using the view directly without an intermediary function
         const { data, error } = await supabase
           .from('organization_members_with_users')
-          .select(`
-            id,
-            organization_id,
-            user_id,
-            role,
-            created_at,
-            email,
-            raw_user_meta_data
-          `)
+          .select('*')
           .eq('organization_id', currentOrganization.id);
 
         if (error) throw error;
