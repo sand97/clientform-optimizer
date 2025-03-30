@@ -224,38 +224,38 @@ const TeamMembers = () => {
         return;
       }
 
-      setLoading(true);
+      // setLoading(true);
 
       setShowFeatureAlert(true);
 
-      const { data, error } = await supabase
-        .from('invitations')
-        .insert({
-          organization_id: currentOrganization.id,
-          email: formData.email,
-          role: formData.role,
-          invited_by: user?.id,
-        });
+      // const { data, error } = await supabase
+      //   .from('invitations')
+      //   .insert({
+      //     organization_id: currentOrganization.id,
+      //     email: formData.email,
+      //     role: formData.role,
+      //     invited_by: user?.id,
+      //   });
 
-      if (error) {
-        if (error.code === 'PGRST301' || error.message.includes('permission denied')) {
-          toast({
-            title: "Permission error",
-            description: "You don't have permission to invite members to this organization.",
-            variant: "destructive",
-          });
-        } else {
-          throw error;
-        }
-      } else {
-        toast({
-          title: "Invitation submitted",
-          description: `An invitation has been registered for ${formData.email}`,
-        });
+      // if (error) {
+      //   if (error.code === 'PGRST301' || error.message.includes('permission denied')) {
+      //     toast({
+      //       title: "Permission error",
+      //       description: "You don't have permission to invite members to this organization.",
+      //       variant: "destructive",
+      //     });
+      //   } else {
+      //     throw error;
+      //   }
+      // } else {
+      //   toast({
+      //     title: "Invitation submitted",
+      //     description: `An invitation has been registered for ${formData.email}`,
+      //   });
 
-        form.reset();
-        setIsDialogOpen(false);
-      }
+      //   form.reset();
+      //   setIsDialogOpen(false);
+      // }
     } catch (error: any) {
       console.error('Error inviting member:', error);
       toast({
