@@ -15,6 +15,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import OrganizationSelector from '@/components/layout/OrganizationSelector';
 import { Organization, TeamMember } from '@/types/forms';
+import { ArrowLeft } from 'lucide-react';
 
 const TeamMembers = () => {
   const { user } = useAuth();
@@ -370,6 +371,11 @@ const TeamMembers = () => {
       </div>
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <Button variant="ghost" onClick={() => navigate('/dashboard')} className="mb-6">
+          <ArrowLeft className="mr-2 h-4 w-4" />
+          Back to Dashboard
+        </Button>
+        
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold">Team Members</h1>
           {isAdmin && (
