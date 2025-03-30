@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -80,12 +81,18 @@ export default function SubmissionsPage() {
     try {
       setIsGeneratingPDF(true);
       
+      console.log('Template Data:', submission.template_data);
+      console.log('Field Values:', submission.field_values);
+      
       const pdfFields: PDFField[] = [];
       
+      // Process each field value and match with its position
       Object.entries(submission.field_values).forEach(([fieldId, value]) => {
         const position = submission.template_data.positions[fieldId];
         
         if (position) {
+          console.log(`Field ${fieldId} has position:`, position);
+          
           pdfFields.push({
             id: fieldId,
             value: String(value),
@@ -95,8 +102,20 @@ export default function SubmissionsPage() {
               page: position.page || 0
             }
           });
+        } else {
+          console.warn(`No position found for field ${fieldId}`);
         }
       });
+      
+      console.log('PDF Fields to process:', pdfFields);
+      
+      if (pdfFields.length === 0) {
+        toast({
+          title: "Warning",
+          description: "No field positions found. The PDF may be empty.",
+          variant: "destructive"
+        });
+      }
       
       const filledPdfBytes = await generateFilledPDF(
         submission.template_data.pdf_url,

@@ -31,21 +31,39 @@ export async function generateFilledPDF(
     const helveticaFont = await pdfDoc.embedFont(StandardFonts.Helvetica);
     
     // Step 4: Fill the form fields based on positions
-    fields.forEach(field => {
+    for (const field of fields) {
       try {
         // Check if the page exists
         if (field.position.page >= pages.length) {
           console.warn(`Page ${field.position.page} does not exist for field ${field.id}.`);
-          return;
+          continue;
         }
         
         const page = pages[field.position.page];
         const { width, height } = page.getSize();
         
+        // Convert percentage-based coordinates to absolute values if needed
+        let xPos = field.position.x;
+        let yPos = field.position.y;
+        
+        // If x and y are percentages (0-100 range), convert to absolute coordinates
+        if (xPos <= 100 && xPos >= 0) {
+          xPos = (xPos / 100) * width;
+        }
+        
+        if (yPos <= 100 && yPos >= 0) {
+          yPos = height - ((yPos / 100) * height); // Convert from top-left to bottom-left origin
+        } else {
+          yPos = height - yPos; // Convert from top-left to bottom-left origin
+        }
+        
+        // Debug logs
+        console.log(`Drawing field ${field.id} with value "${field.value}" at position (${xPos}, ${yPos}) on page ${field.position.page}`);
+        
         // Add text to the correct position
-        page.drawText(field.value, {
-          x: field.position.x,
-          y: height - field.position.y, // Convert from top-left to bottom-left origin
+        page.drawText(String(field.value), {
+          x: xPos,
+          y: yPos,
           size: 12,
           font: helveticaFont,
           color: rgb(0, 0, 0),
@@ -54,7 +72,7 @@ export async function generateFilledPDF(
       } catch (err) {
         console.error(`Error drawing field ${field.id}:`, err);
       }
-    });
+    }
     
     // Step 5: Save the filled PDF
     return await pdfDoc.save();
