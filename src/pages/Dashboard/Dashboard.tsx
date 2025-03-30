@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { ArrowRight, BarChart, CheckCircle, FileCheck, FileText, FormInput, Plus, Send, Settings, Users } from 'lucide-react';
+import { ArrowRight, BarChart, CheckCircle, FileCheck, FileText, FormInput, Plus, Send, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Organization, Template, TeamMember } from '@/types/forms';
