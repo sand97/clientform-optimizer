@@ -92,6 +92,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "forms_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "user_organizations_view"
+            referencedColumns: ["organization_id"]
+          },
         ]
       }
       invitations: {
@@ -133,6 +140,13 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "invitations_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "user_organizations_view"
+            referencedColumns: ["organization_id"]
+          },
         ]
       }
       organization_members: {
@@ -164,6 +178,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "organizations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "user_organizations_view"
+            referencedColumns: ["organization_id"]
           },
         ]
       }
@@ -262,6 +283,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "submissions_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "user_organizations_view"
+            referencedColumns: ["organization_id"]
+          },
+          {
             foreignKeyName: "submissions_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
@@ -324,10 +352,9 @@ export type Database = {
           created_at: string | null
           email: string | null
           id: string | null
-          name: string | null
           organization_id: string | null
+          raw_user_meta_data: Json | null
           role: string | null
-          surname: string | null
           user_id: string | null
         }
         Relationships: [
@@ -338,7 +365,27 @@ export type Database = {
             referencedRelation: "organizations"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "organization_members_organization_id_fkey"
+            columns: ["organization_id"]
+            isOneToOne: false
+            referencedRelation: "user_organizations_view"
+            referencedColumns: ["organization_id"]
+          },
         ]
+      }
+      user_organizations_view: {
+        Row: {
+          created_by: string | null
+          is_owner: boolean | null
+          member_count: number | null
+          organization_created_at: string | null
+          organization_id: string | null
+          organization_name: string | null
+          user_id: string | null
+          user_role: string | null
+        }
+        Relationships: []
       }
     }
     Functions: {

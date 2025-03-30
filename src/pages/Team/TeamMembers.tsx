@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -152,6 +153,8 @@ const TeamMembers = () => {
 
         if (error) throw error;
 
+        console.log('Members data:', data);
+
         // Map the results to match TeamMember type
         const mappedMembers: TeamMember[] = data.map(item => ({
           id: item.id || '',
@@ -165,6 +168,7 @@ const TeamMembers = () => {
 
         setMembers(mappedMembers);
       } catch (error: any) {
+        console.error('Error fetching members:', error);
         toast({
           title: "Error loading team members",
           description: error.message,
@@ -335,6 +339,14 @@ const TeamMembers = () => {
     const parts = name.split(' ');
     if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
     return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  const handleSelectOrganization = (id: string) => {
+    navigate(`/team/${id}`);
+  };
+
+  const handleCreateOrganization = () => {
+    navigate('/organizations/create');
   };
 
   return (
